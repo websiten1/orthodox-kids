@@ -44,28 +44,33 @@ export default function ProfilNouPage() {
     }
 
     setLoading(true);
-    const res = await fetch("/api/copil/inregistrare", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        groupCode,
-        firstName: firstName.trim(),
-        initial: initial.trim().toUpperCase(),
-        avatarConfig: { avatarType, clothingColor: avatarColor },
-      }),
-    });
+    try {
+      const res = await fetch("/api/copil/inregistrare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupCode,
+          firstName: firstName.trim(),
+          initial: initial.trim().toUpperCase(),
+          avatarConfig: { avatarType, clothingColor: avatarColor },
+        }),
+      });
 
-    const data = await res.json();
-    setLoading(false);
+      let data: { error?: string; accessToken?: string } = {};
+      try { data = await res.json(); } catch { /* ignore */ }
 
-    if (!res.ok) {
-      setError(data.error ?? "Eroare. Încercați din nou.");
-      return;
+      if (!res.ok) {
+        setError(data.error ?? `Eroare server (${res.status}). Încercați din nou.`);
+        return;
+      }
+
+      sessionStorage.setItem("newChildToken", data.accessToken ?? "");
+      router.push("/copil/profil-nou/token");
+    } catch {
+      setError("Eroare de rețea. Verificați conexiunea.");
+    } finally {
+      setLoading(false);
     }
-
-    // Afișăm tokenul personal copilului
-    sessionStorage.setItem("newChildToken", data.accessToken);
-    router.push("/copil/profil-nou/token");
   }
 
   const displayName = firstName.trim()

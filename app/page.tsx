@@ -5,7 +5,7 @@ export default async function HomePage() {
   const session = await getSession();
 
   if (session?.type === "parish") {
-    redirect("/parohie");
+    redirect("/parohie/dashboard");
   }
   if (session?.type === "child") {
     redirect("/copil/harta");

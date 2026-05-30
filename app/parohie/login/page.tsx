@@ -15,21 +15,28 @@ export default function ParohieLoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/auth/parohie/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/auth/parohie/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? "Date incorecte. Verificați email și parola.");
+      let data: { error?: string } = {};
+      try { data = await res.json(); } catch { /* ignore */ }
+
+      if (!res.ok) {
+        setError(data.error ?? `Eroare (${res.status}). Verificați email și parola.`);
+        return;
+      }
+
+      router.push("/parohie/dashboard");
+      router.refresh();
+    } catch {
+      setError("Eroare de rețea. Verificați conexiunea la internet.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.push("/parohie/dashboard");
-    router.refresh();
   }
 
   return (

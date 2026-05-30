@@ -16,53 +16,58 @@ export default function CopilIntrare() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    try {
+      const res = await fetch("/api/copil/verifica-cod", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupCode: groupCode.toUpperCase().trim() }),
+      });
 
-    const res = await fetch("/api/copil/verifica-cod", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ groupCode: groupCode.toUpperCase().trim() }),
-    });
+      let data: { groupName?: string; ageRange?: string } = {};
+      try { data = await res.json(); } catch { /* ignore */ }
 
-    const data = await res.json();
-    setLoading(false);
+      if (!res.ok) {
+        setError("Codul nu este valid. Cereți codul corect de la profesor.");
+        return;
+      }
 
-    if (!res.ok) {
-      setError("Codul nu este valid. Verificați că l-ați scris corect.");
-      return;
+      sessionStorage.setItem("groupCode", groupCode.toUpperCase().trim());
+      sessionStorage.setItem("groupName", data.groupName ?? "");
+      sessionStorage.setItem("ageRange", data.ageRange ?? "");
+      router.push("/copil/profil-nou");
+    } catch {
+      setError("Eroare de rețea. Verificați conexiunea la internet.");
+    } finally {
+      setLoading(false);
     }
-
-    // Stochăm codul de grupă în sessionStorage pentru pasul următor
-    sessionStorage.setItem("groupCode", groupCode.toUpperCase().trim());
-    sessionStorage.setItem("groupName", data.groupName);
-    sessionStorage.setItem("ageRange", data.ageRange);
-
-    router.push("/copil/profil-nou");
   }
 
-  // Login cu token existent (copil care s-a mai conectat)
   async function handleExistingLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
+    try {
+      const res = await fetch("/api/auth/copil/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupCode: groupCode.toUpperCase().trim(),
+          accessToken: accessToken.toUpperCase().trim(),
+        }),
+      });
 
-    const res = await fetch("/api/auth/copil/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        groupCode: groupCode.toUpperCase().trim(),
-        accessToken: accessToken.toUpperCase().trim(),
-      }),
-    });
+      if (!res.ok) {
+        setError("Date incorecte. Verificați codul clasei și codul personal.");
+        return;
+      }
 
-    setLoading(false);
-
-    if (!res.ok) {
-      setError("Date incorecte. Verificați codul clasei și tokenul personal.");
-      return;
+      router.push("/copil/harta");
+      router.refresh();
+    } catch {
+      setError("Eroare de rețea. Verificați conexiunea la internet.");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/copil/harta");
-    router.refresh();
   }
 
   return (

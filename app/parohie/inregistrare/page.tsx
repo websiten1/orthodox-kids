@@ -33,26 +33,34 @@ export default function ParohieInregistrarePage() {
     }
 
     setLoading(true);
-    const res = await fetch("/api/auth/parohie/inregistrare", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.name,
-        city: form.city,
-        email: form.email,
-        password: form.password,
-      }),
-    });
+    try {
+      const res = await fetch("/api/auth/parohie/inregistrare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          city: form.city,
+          email: form.email,
+          password: form.password,
+        }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? "Eroare la înregistrare. Încercați din nou.");
+      let data: { error?: string } = {};
+      try { data = await res.json(); } catch { /* ignore parse error */ }
+
+      if (!res.ok) {
+        setError(data.error ?? `Eroare server (${res.status}). Verificați că baza de date e configurată.`);
+        return;
+      }
+
+      router.push("/parohie/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError("Eroare de rețea. Verificați conexiunea și încercați din nou.");
+      console.error(err);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.push("/parohie/dashboard");
-    router.refresh();
   }
 
   return (
