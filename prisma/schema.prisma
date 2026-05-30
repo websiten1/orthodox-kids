@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Parish {
+  id               String   @id @default(cuid())
+  name             String
+  city             String
+  email            String   @unique
+  passwordHash     String
+  subscriptionPlan String   @default("free")
+  createdAt        DateTime @default(now())
+
+  users           User[]
+  groups          Group[]
+  notifications   Notification[]
+  gospelOverrides ParishGospelOverride[]
+}
+
+model User {
+  id           String @id @default(cuid())
+  parishId     String
+  name         String
+  email        String @unique
+  passwordHash String
+  role         String // "admin" | "teacher"
+
+  parish Parish         @relation(fields: [parishId], references: [id])
+  groups GroupTeacher[]
+}
+
+model Group {
+  id         String   @id @default(cuid())
+  parishId   String
+  name       String
+  ageRange   String   // "1-2" | "3-4" | "5-6" | "7-8"
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
+
+  parish   Parish         @relation(fields: [parishId], references: [id])
+  teams    Team[]
+  children Child[]
+  themes   GroupTheme[]
+  teachers GroupTeacher[]
+}
+
+model GroupTeacher {
+  id      String @id @default(cuid())
+  groupId String
+  userId  String
+  group   Group  @relation(fields: [groupId], references: [id])
+  user    User   @relation(fields: [userId], references: [id])
+}
+
+model Team {
+  id          String @id @default(cuid())
+  groupId     String
+  name        String
+  blazonLevel Int    @default(0)
+
+  group      Group       @relation(fields: [groupId], references: [id])
+  children   Child[]
+  teamEvents TeamEvent[]
+}
+
+model Child {
+  id             String   @id @default(cuid())
+  groupId        String
+  teamId         String?
+  displayName    String
+  avatarConfig   Json     @default("{}")
+  talantsBalance Int      @default(0)
+  accessToken    String   @unique @default(cuid())
+  joinedAt       DateTime @default(now())
+
+  group          Group                  @relation(fields: [groupId], references: [id])
+  team           Team?                  @relation(fields: [teamId], references: [id])
+  parent         Parent?
+  activityEvents ActivityEvent[]
+  inventory      ChildInventory[]
+  saintCards     ChildSaintCollection[]
+  iconProgress   ChildIconProgress?
+}
+
+model Parent {
+  id         String @id @default(cuid())
+  childId    String @unique
+  email      String @unique
+  accessCode String @unique
+
+  child Child @relation(fields: [childId], references: [id])
+}
+
+model Theme {
+  id          String  @id @default(cuid())
+  title       String
+  weekNumber  Int
+  ageRange    String  // "1-2" | "3-4" | "5-6" | "7-8" | "all"
+  description String
+  mapLocation String  // "biserica" | "gradina" | "scriptoriu" etc.
+  isPublished Boolean @default(false)
+  iconEmoji   String  @default("✝️")
+
+  activities  Activity[]
+  groupThemes GroupTheme[]
+}
+
+model GroupTheme {
+  id        String    @id @default(cuid())
+  groupId   String
+  themeId   String
+  isActive  Boolean   @default(false)
+  startDate DateTime?
+
+  group     Group                  @relation(fields: [groupId], references: [id])
+  theme     Theme                  @relation(fields: [themeId], references: [id])
+  overrides GroupActivityOverride[]
+}
+
+model GroupActivityOverride {
+  id           String  @id @default(cuid())
+  groupThemeId String
+  activityId   String
+  isEnabled    Boolean @default(true)
+
+  groupTheme GroupTheme @relation(fields: [groupThemeId], references: [id])
+  activity   Activity   @relation(fields: [activityId], references: [id])
+}
+
+model Activity {
+  id            String @id @default(cuid())
+  themeId       String
+  type          String // "lesson" | "quiz" | "minigame" | "group_mission" | "matching"
+  title         String
+  content       Json
+  talantsReward Int    @default(5)
+  orderIndex    Int
+  estimatedMins Int
+  ageRange      String
+
+  theme          Theme                  @relation(fields: [themeId], references: [id])
+  questions      Question[]
+  activityEvents ActivityEvent[]
+  overrides      GroupActivityOverride[]
+}
+
+model Question {
+  id            String @id @default(cuid())
+  activityId    String
+  text          String
+  options       Json
+  correctAnswer String
+  explanation   String
+
+  activity Activity @relation(fields: [activityId], references: [id])
+}
+
+model ActivityEvent {
+  id            String   @id @default(cuid())
+  childId       String
+  activityId    String
+  score         Int
+  talantsEarned Int
+  timeSpentSecs Int
+  completedAt   DateTime @default(now())
+  answersLog    Json     @default("[]")
+
+  child    Child    @relation(fields: [childId], references: [id])
+  activity Activity @relation(fields: [activityId], references: [id])
+}
+
+model TeamEvent {
+  id            String   @id @default(cuid())
+  teamId        String
+  activityId    String
+  result        String   // "win" | "lose" | "draw"
+  talantsEarned Int
+  playedAt      DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id])
+}
+
+model ShopItem {
+  id                String  @id @default(cuid())
+  name              String
+  description       String
+  category          String  // "avatar_clothing" | "avatar_accessory" | "room_item" | "card_frame" | "title"
+  talantsCost       Int
+  isEarnable        Boolean @default(false)
+  imageUrl          String
+  requiredCondition String?
+
+  inventory ChildInventory[]
+}
+
+model ChildInventory {
+  id         String   @id @default(cuid())
+  childId    String
+  shopItemId String
+  isEquipped Boolean  @default(false)
+  acquiredAt DateTime @default(now())
+
+  child    Child    @relation(fields: [childId], references: [id])
+  shopItem ShopItem @relation(fields: [shopItemId], references: [id])
+
+  @@unique([childId, shopItemId])
+}
+
+model SaintCard {
+  id         String @id @default(cuid())
+  name       String
+  feastDay   String
+  virtue     String
+  storyShort String
+  iconUrl    String
+  region     String // "roman" | "universal"
+  difficulty String
+
+  collections ChildSaintCollection[]
+}
+
+model ChildSaintCollection {
+  id          String   @id @default(cuid())
+  childId     String
+  saintCardId String
+  acquiredAt  DateTime @default(now())
+  frameId     String?
+
+  child     Child     @relation(fields: [childId], references: [id])
+  saintCard SaintCard @relation(fields: [saintCardId], references: [id])
+
+  @@unique([childId, saintCardId])
+}
+
+model ChildIconProgress {
+  id              String  @id @default(cuid())
+  childId         String  @unique
+  completedLayers Int     @default(0)
+  totalLayers     Int     @default(10)
+  currentImageUrl String?
+
+  child Child @relation(fields: [childId], references: [id])
+}
+
+model Gospel {
+  id           String   @id @default(cuid())
+  title        String
+  calendarDate DateTime
+  textByAge    Json
+  moralLesson  String
+  characters   Json     @default("[]")
+  isHoliday    Boolean  @default(false)
+
+  activities GospelActivity[]
+  schedules  GospelSchedule[]
+  overrides  ParishGospelOverride[]
+}
+
+model GospelActivity {
+  id       String @id @default(cuid())
+  gospelId String
+  type     String // "story" | "reconstruct" | "choices" | "questions" | "puzzle"
+  content  Json
+  ageRange String
+
+  gospel Gospel @relation(fields: [gospelId], references: [id])
+}
+
+model GospelSchedule {
+  id       String   @id @default(cuid())
+  date     DateTime
+  gospelId String
+  isActive Boolean  @default(true)
+
+  gospel Gospel @relation(fields: [gospelId], references: [id])
+}
+
+model ParishGospelOverride {
+  id         String   @id @default(cuid())
+  parishId   String
+  date       DateTime
+  gospelId   String
+  isDisabled Boolean  @default(false)
+
+  parish Parish @relation(fields: [parishId], references: [id])
+  gospel Gospel @relation(fields: [gospelId], references: [id])
+}
+
+model Notification {
+  id       String   @id @default(cuid())
+  parishId String
+  groupId  String?
+  message  String
+  sentAt   DateTime @default(now())
+
+  parish Parish @relation(fields: [parishId], references: [id])
+}

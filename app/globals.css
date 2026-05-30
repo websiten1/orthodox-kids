@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --auriu: #C9A84C;
+  --auriu-deschis: #E8C97A;
+  --rosu: #8B1A1A;
+  --rosu-deschis: #A52828;
+  --albastru: #1B3A6B;
+  --albastru-deschis: #2A5499;
+  --crem: #F5F0E8;
+  --crem-inchis: #EAE3D5;
+  --maro: #5C3D1E;
+  --background: #F5F0E8;
+  --foreground: #2C1B0E;
+}
+
+@theme inline {
+  --color-auriu: var(--auriu);
+  --color-auriu-deschis: var(--auriu-deschis);
+  --color-rosu: var(--rosu);
+  --color-rosu-deschis: var(--rosu-deschis);
+  --color-albastru: var(--albastru);
+  --color-albastru-deschis: var(--albastru-deschis);
+  --color-crem: var(--crem);
+  --color-crem-inchis: var(--crem-inchis);
+  --color-maro: var(--maro);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.font-sans {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Animație puls auriu */
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(201, 168, 76, 0); }
+}
+
+.pulse-gold {
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+/* Scroll bar stilizat */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--crem-inchis);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--auriu);
+  border-radius: 3px;
+}
