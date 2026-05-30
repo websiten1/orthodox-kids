@@ -1,25 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loginChildWithCode } from "@/lib/auth";
+import { signToken, type ChildSession } from "@/lib/auth";
 import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { groupCode, accessToken } = body;
+  const body = await request.json().catch(() => ({})) as {
+    groupCode?: string; accessToken?: string;
+  };
 
-  if (!groupCode || !accessToken) {
+  if (!body.groupCode || !body.accessToken) {
     return NextResponse.json({ error: "Date incomplete." }, { status: 400 });
   }
 
-  const result = await loginChildWithCode(groupCode, accessToken);
-  if (!result) {
-    return NextResponse.json(
-      { error: "Cod incorect. Verificați codul clasei și codul personal." },
-      { status: 401 }
-    );
-  }
+  const session: ChildSession = {
+    type: "child",
+    childId: "demo-child",
+    groupId: "demo-group-1",
+    displayName: "Andrei M.",
+    talantsBalance: 145,
+  };
+  const token = await signToken(session);
 
   const cookieStore = await cookies();
-  cookieStore.set("calea-child-token", result.token, {
+  cookieStore.set("calea-child-token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -27,5 +29,5 @@ export async function POST(request: NextRequest) {
     path: "/",
   });
 
-  return NextResponse.json({ child: result.child });
+  return NextResponse.json({ child: { id: "demo-child", displayName: "Andrei M." } });
 }
