@@ -1,209 +1,122 @@
 "use client";
 
 import { useState } from "react";
+import { T, Gem, GButton, Panel, Medallion, Pill, SectionTitle, Icon } from "./ui";
 
-type Saint = {
-  id: string;
-  name: string;
-  feastDay: string;
-  virtue: string;
-  storyShort: string;
-  iconUrl: string;
-  region: string;
-  difficulty: string;
-  owned: boolean;
-};
+type Saint = { id: string; name: string; feastDay: string; virtue: string; storyShort: string; iconUrl: string; region: string; difficulty: string; owned: boolean; };
 
-export default function SaintsCollection({
-  saints,
-  totalOwned,
-}: {
-  saints: Saint[];
-  totalOwned: number;
-}) {
+export default function SaintsCollection({ saints, totalOwned }: { saints: Saint[]; totalOwned: number }) {
+  const [view, setView] = useState<"list" | "detail">("list");
   const [selected, setSelected] = useState<Saint | null>(null);
-  const [showBack, setShowBack] = useState(false);
   const [filter, setFilter] = useState<"all" | "roman" | "universal">("all");
 
   const visible = filter === "all" ? saints : saints.filter(s => s.region === filter);
 
+  function openSaint(s: Saint) { if (s.owned) { setSelected(s); setView("detail"); } }
+
+  if (view === "detail" && selected) {
+    return <SaintDetail saint={selected} onBack={() => setView("list")} />;
+  }
+
   return (
-    <div style={{ minHeight: "100vh", background: "#FAFAFA", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <div style={{ background: "linear-gradient(160deg, #A77BF0, #8455D8)", padding: "52px 16px 20px" }}>
-        <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 28, fontWeight: 700, color: "white", margin: "0 0 8px" }}>
-          Sfinții mei
-        </p>
-        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: "rgba(255,255,255,.8)", fontWeight: 600, margin: "0 0 12px" }}>
-          {totalOwned} din {saints.length} sfinți descoperiți
-        </p>
-        {/* Progress bar */}
-        <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,.25)", overflow: "hidden" }}>
-          <div style={{
-            height: "100%",
-            background: "#FFC23D",
-            borderRadius: 999,
-            width: `${(totalOwned / Math.max(saints.length, 1)) * 100}%`,
-            boxShadow: "0 0 8px rgba(255,194,61,.6)",
-          }} />
-        </div>
-      </div>
-
-      {/* Filter pills */}
-      <div style={{ display: "flex", gap: 8, padding: "12px 16px", background: "white", borderBottom: "1.5px solid #EFEBF5" }}>
-        {(["all", "roman", "universal"] as const).map(r => (
-          <button
-            key={r}
-            onClick={() => setFilter(r)}
-            style={{
-              fontFamily: "'Fredoka', sans-serif",
-              fontSize: 14, fontWeight: 600, padding: "7px 16px",
-              borderRadius: 999, border: "none", cursor: "pointer",
-              background: filter === r ? "#A77BF0" : "#F4F1FA",
-              color: filter === r ? "white" : "#8A8296",
-              boxShadow: filter === r ? "0 3px 0 #8455D8" : "none",
-              transition: "all .15s",
-            }}
-          >
-            {r === "all" ? "Toți" : r === "roman" ? "Români" : "Universali"}
-          </button>
-        ))}
-      </div>
-
-      {/* Grid */}
-      <div style={{ flex: 1, padding: "16px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-        {visible.map(saint => (
-          <button
-            key={saint.id}
-            onClick={() => saint.owned ? (setSelected(saint), setShowBack(false)) : undefined}
-            disabled={!saint.owned}
-            style={{
-              aspectRatio: "3/4",
-              borderRadius: 20,
-              border: saint.owned ? "2px solid #A77BF0" : "2px solid #EFEBF5",
-              background: saint.owned ? "white" : "#F4F1FA",
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              gap: 8, padding: "12px 8px",
-              cursor: saint.owned ? "pointer" : "default",
-              opacity: saint.owned ? 1 : 0.45,
-              boxShadow: saint.owned ? "0 4px 14px -8px rgba(167,123,240,.4)" : "none",
-              transition: "all .15s",
-            }}
-          >
-            {/* Gold medallion */}
-            <div
-              className="medallion"
-              style={{ width: saint.owned ? 52 : 44, height: saint.owned ? 52 : 44 }}
-            >
-              <div
-                className="medallion-inner"
-                style={{ width: "100%", height: "100%", fontSize: saint.owned ? 24 : 18 }}
-              >
-                {saint.owned ? "✦" : "?"}
-              </div>
-            </div>
-            {saint.owned && (
-              <span style={{
-                fontFamily: "'Fredoka', sans-serif",
-                fontSize: 11, fontWeight: 700,
-                color: "#403A4A", textAlign: "center",
-                lineHeight: 1.2,
-              }}>
-                {saint.name}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Modal */}
-      {selected && (
-        <div
-          style={{
-            position: "fixed", inset: 0, background: "rgba(64,58,74,.6)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 20, zIndex: 60,
-          }}
-          onClick={() => setSelected(null)}
-        >
-          <div
-            style={{
-              background: "white", borderRadius: 28,
-              maxWidth: 340, width: "100%",
-              overflow: "hidden",
-              boxShadow: "0 24px 48px -12px rgba(64,58,74,.4)",
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            {!showBack ? (
-              /* Front */
-              <div style={{ background: "linear-gradient(160deg, #A77BF0, #8455D8)", padding: "28px 24px", textAlign: "center" }}>
-                <div className="medallion" style={{ width: 88, height: 88, margin: "0 auto 16px" }}>
-                  <div className="medallion-inner" style={{ width: "100%", height: "100%", fontSize: 40 }}>✦</div>
-                </div>
-                <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 22, fontWeight: 700, color: "white", margin: "0 0 4px" }}>{selected.name}</p>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "rgba(255,255,255,.8)", fontWeight: 600, margin: "0 0 12px" }}>{selected.feastDay}</p>
-                <div style={{
-                  display: "inline-block", background: "rgba(255,255,255,.18)",
-                  borderRadius: 999, padding: "5px 14px",
-                  fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: "white",
-                }}>
-                  Virtutea: {selected.virtue}
-                </div>
-                <br/>
-                <button
-                  onClick={() => setShowBack(true)}
-                  style={{
-                    marginTop: 16, background: "none", border: "none", cursor: "pointer",
-                    fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700,
-                    color: "rgba(255,255,255,.75)", textDecoration: "underline",
-                  }}
-                >
-                  Citește povestea →
-                </button>
-              </div>
-            ) : (
-              /* Back */
-              <div style={{ padding: "24px 22px" }}>
-                <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 700, color: "#403A4A", margin: "0 0 4px", textAlign: "center" }}>{selected.name}</p>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: "#8A8296", fontWeight: 700, textAlign: "center", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px" }}>
-                  {selected.feastDay} · {selected.region === "roman" ? "Sfânt Român" : "Sfânt Universal"}
-                </p>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 15, color: "#403A4A", fontWeight: 600, lineHeight: 1.65, margin: "0 0 16px" }}>
-                  {selected.storyShort}
-                </p>
-                <div style={{
-                  background: "#FFF4D6", borderRadius: 12, padding: "10px 14px",
-                  fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: "#EFA014",
-                }}>
-                  Virtutea sa: {selected.virtue}
-                </div>
-                <button
-                  onClick={() => setShowBack(false)}
-                  style={{ marginTop: 14, background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: "#8A8296" }}
-                >
-                  ← Înapoi la icoană
-                </button>
-              </div>
-            )}
-
-            <div style={{ padding: "12px 22px 20px", borderTop: "1.5px solid #EFEBF5" }}>
-              <button
-                onClick={() => setSelected(null)}
-                style={{
-                  width: "100%", padding: "13px",
-                  borderRadius: 999, border: "none", cursor: "pointer",
-                  background: "#F4F1FA",
-                  fontFamily: "'Fredoka', sans-serif", fontSize: 16, fontWeight: 700, color: "#8A8296",
-                }}
-              >
-                Închide
-              </button>
-            </div>
+    <div style={{ minHeight: "100vh", background: T.cream }}>
+      {/* TopBanner */}
+      <div style={{ background: "#fff", borderBottom: `2px solid ${T.line}`, paddingBottom: 12 }}>
+        <div style={{ height: 44, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 22px" }}>
+          <span style={{ fontFamily: T.fT, fontSize: 14, fontWeight: 800, color: T.ink }}>9:41</span>
+          <div style={{ width: 17, height: 11, border: `1.4px solid ${T.ink}`, borderRadius: 3, position: "relative", opacity: 0.9 }}>
+            <div style={{ position: "absolute", inset: 1.5, width: "70%", background: T.ink, borderRadius: 1 }} />
           </div>
         </div>
-      )}
+        <div style={{ padding: "2px 14px 0", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ fontFamily: T.fD, fontWeight: 700, fontSize: 24, color: T.ink }}>Eroii Credinței</div>
+        </div>
+      </div>
+
+      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 13 }}>
+        {/* Progress pill */}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Pill bg={T.gold50} fg={T.goldE}><Gem size={14} /> {totalOwned} din {saints.length} descoperiți</Pill>
+        </div>
+
+        {/* Filter pills */}
+        <div style={{ display: "flex", gap: 8 }}>
+          {(["all", "roman", "universal"] as const).map(r => (
+            <button key={r} onClick={() => setFilter(r)} style={{
+              fontFamily: T.fT, fontWeight: 800, fontSize: 13,
+              padding: "7px 16px", borderRadius: 999, border: "none", cursor: "pointer",
+              background: filter === r ? T.lilac : T.line,
+              color: filter === r ? "#fff" : T.ink2,
+              boxShadow: filter === r ? `0 3px 0 ${T.lilacE}` : "none",
+              transition: "all .15s",
+            }}>
+              {r === "all" ? "Toți" : r === "roman" ? "Români" : "Universali"}
+            </button>
+          ))}
+        </div>
+
+        {/* List */}
+        {visible.map(s => (
+          <Panel key={s.id} onClick={() => openSaint(s)} style={{ padding: 12, display: "flex", alignItems: "center", gap: 14, opacity: s.owned ? 1 : 0.5, cursor: s.owned ? "pointer" : "default" }}>
+            <Medallion icon={s.iconUrl.length <= 2 ? s.iconUrl : "✦"} size={66} ring={5} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: T.fD, fontWeight: 700, fontSize: 21, color: T.ink, lineHeight: 1.05 }}>{s.name}</div>
+              <div style={{ fontFamily: T.fD, fontStyle: "italic", fontSize: 15, color: T.ink2 }}>{s.virtue}</div>
+              <div style={{ marginTop: 5, display: "inline-flex" }}>
+                <Pill bg={T.gold50} fg={T.goldE} style={{ fontSize: 12 }}>
+                  <Icon name="calendar" size={12} color={T.goldE} stroke={2} /> {s.feastDay}
+                </Pill>
+              </div>
+            </div>
+            {s.owned && <Icon name="chevron-right" size={20} color={T.ink3} stroke={2} />}
+          </Panel>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SaintDetail({ saint, onBack }: { saint: Saint; onBack: () => void }) {
+  return (
+    <div style={{ minHeight: "100vh", background: T.cream }}>
+      <div style={{ background: "#fff", borderBottom: `2px solid ${T.line}`, paddingBottom: 12 }}>
+        <div style={{ height: 44, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 22px" }}>
+          <span style={{ fontFamily: T.fT, fontSize: 14, fontWeight: 800, color: T.ink }}>9:41</span>
+          <div style={{ width: 17, height: 11, border: `1.4px solid ${T.ink}`, borderRadius: 3, position: "relative", opacity: 0.9 }}>
+            <div style={{ position: "absolute", inset: 1.5, width: "70%", background: T.ink, borderRadius: 1 }} />
+          </div>
+        </div>
+        <div style={{ padding: "2px 14px 0", display: "flex", alignItems: "center", gap: 10 }}>
+          <div onClick={onBack} style={{ width: 40, height: 40, borderRadius: 14, background: T.line, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <Icon name="arrow-left" size={20} color={T.ink} stroke={2} />
+          </div>
+          <div style={{ fontFamily: T.fD, fontWeight: 700, fontSize: 24, color: T.ink }}>Erou</div>
+        </div>
+      </div>
+
+      <div style={{ padding: 16 }}>
+        <Panel style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <Medallion icon={saint.iconUrl.length <= 2 ? saint.iconUrl : "✦"} size={150} glow />
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontFamily: T.fD, fontWeight: 700, fontSize: 28, color: T.ink, lineHeight: 1.05 }}>{saint.name}</div>
+            <div style={{ fontFamily: T.fD, fontStyle: "italic", fontSize: 18, color: T.ink2, marginTop: 1 }}>{saint.virtue}</div>
+          </div>
+          <div style={{ display: "flex", gap: 9 }}>
+            <Pill bg={T.gold50} fg={T.goldE}>
+              <Icon name="calendar" size={13} color={T.goldE} stroke={2} /> {saint.feastDay}
+            </Pill>
+            <Pill bg={T.teal50} fg={T.mintE}>
+              <Icon name="crown" size={13} color={T.mintE} stroke={2} /> {saint.region === "roman" ? "Sfânt Român" : "Universal"}
+            </Pill>
+          </div>
+          <p style={{ fontFamily: T.fT, fontSize: 16, lineHeight: 1.6, color: T.ink, textAlign: "center", margin: "4px 2px 0" }}>
+            {saint.storyShort}
+          </p>
+          <GButton color="gold" icon={<Icon name="volume-2" size={16} color="#fff" stroke={2} />}>
+            Ascultă troparul
+          </GButton>
+        </Panel>
+      </div>
     </div>
   );
 }
