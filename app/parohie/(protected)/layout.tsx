@@ -13,9 +13,11 @@ export default async function ParishLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div style={{ minHeight: "100vh", background: "#FBF6EC", display: "flex" }}>
       <ParishSidebar parishName={session!.name} />
-      <main className="flex-1 ml-0 lg:ml-64 min-h-screen">{children}</main>
+      <main style={{ flex: 1, marginLeft: 0 }} className="lg:ml-[220px] min-h-screen">
+        {children}
+      </main>
     </div>
   );
 }

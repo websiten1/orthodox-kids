@@ -7,12 +7,19 @@ const PRESETS = [
   "A apărut o temă nouă. Intrați și vedeți activitățile!",
   "Vă invităm la slujba de duminică la ora 09:00.",
 ];
-
 const GROUPS = [
   { id: "all", name: "Toată parohia" },
   { id: "g1", name: "Grupul Mic (Cl. I-II)" },
   { id: "g2", name: "Grupul Mare (Cl. V-VI)" },
 ];
+
+const inputStyle = {
+  width: "100%", padding: "12px 15px", borderRadius: 12,
+  border: "1.5px solid #ECE3D2", fontFamily: "'Nunito', sans-serif",
+  fontSize: 14, fontWeight: 600, color: "#403A4A",
+  background: "#FDFAF5", outline: "none", boxSizing: "border-box" as const,
+  transition: "border-color .15s",
+};
 
 export default function NotificariPage() {
   const [selectedGroup, setSelectedGroup] = useState("all");
@@ -21,48 +28,52 @@ export default function NotificariPage() {
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    setSent(true);
-    setMessage("");
+    setSent(true); setMessage("");
     setTimeout(() => setSent(false), 3000);
   }
 
   return (
-    <div className="p-4 lg:p-8 max-w-2xl space-y-6 lg:pt-8 pt-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Notificări</h1>
-        <p className="text-gray-500 font-sans text-sm mt-1">Trimiteți anunțuri copiilor. Fără chat, doar mesaje de grup.</p>
+    <div style={{ padding: "24px 20px 40px", maxWidth: 560 }}>
+      <div style={{ marginBottom: 28 }}>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B58A3C", margin: "0 0 4px" }}>PAROHIE</p>
+        <h1 style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 30, fontWeight: 700, color: "#403A4A", margin: 0 }}>Notificări</h1>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "#8A8296", fontWeight: 600, marginTop: 4 }}>Trimiteți anunțuri copiilor. Fără chat — doar mesaje de grup.</p>
       </div>
-      <form onSubmit={handleSend} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-5">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2 font-sans">Destinatari</label>
-          <select value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-albastru focus:outline-none font-sans">
-            {GROUPS.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2 font-sans">Mesaj</label>
-          <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={4} maxLength={500}
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-albastru focus:outline-none font-sans resize-none"
-            placeholder="Scrieți mesajul dvs..." />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2 font-sans">Mesaje predefinite</label>
-          <div className="space-y-2">
-            {PRESETS.map(p => (
-              <button key={p} type="button" onClick={() => setMessage(p)}
-                className="w-full text-left text-sm text-gray-600 font-sans px-3 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                {p}
-              </button>
-            ))}
+
+      <div style={{ background: "white", borderRadius: 20, padding: "24px", border: "1px solid #ECE3D2", boxShadow: "0 2px 12px -4px rgba(164,50,52,.08)" }}>
+        <form onSubmit={handleSend} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: "#8A8296", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 8px" }}>Destinatari</p>
+            <select value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)} style={{ ...inputStyle }}>
+              {GROUPS.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
           </div>
-        </div>
-        {sent && <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm font-sans text-center">✅ Mesaj trimis cu succes!</div>}
-        <button type="submit" disabled={!message.trim()}
-          className="w-full py-4 rounded-xl bg-albastru text-white font-bold font-sans hover:bg-albastru-deschis transition-all disabled:opacity-60">
-          Trimite notificarea
-        </button>
-      </form>
+          <div>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: "#8A8296", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 8px" }}>Mesaj</p>
+            <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={4} maxLength={500}
+              style={{ ...inputStyle, resize: "none" }} placeholder="Scrieți mesajul..." />
+          </div>
+          <div>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: "#8A8296", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 8px" }}>Mesaje predefinite</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {PRESETS.map(p => (
+                <button key={p} type="button" onClick={() => setMessage(p)}
+                  style={{ textAlign: "left", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #ECE3D2", background: "#FDFAF5", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 600, color: "#403A4A", transition: "border-color .15s" }}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          {sent && (
+            <div style={{ background: "#EBF3EF", border: "1.5px solid #2E5A47", borderRadius: 12, padding: "10px 14px", fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: "#2E5A47", textAlign: "center" }}>
+              Mesaj trimis cu succes!
+            </div>
+          )}
+          <button type="submit" disabled={!message.trim()} className="btn-candy btn-red" style={{ opacity: !message.trim() ? 0.6 : 1 }}>
+            Trimite notificarea
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

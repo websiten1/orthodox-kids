@@ -14,88 +14,102 @@ type Saint = {
   owned: boolean;
 };
 
-type Props = {
+export default function SaintsCollection({
+  saints,
+  totalOwned,
+}: {
   saints: Saint[];
   totalOwned: number;
-};
-
-export default function SaintsCollection({ saints, totalOwned }: Props) {
-  const [selectedSaint, setSelectedSaint] = useState<Saint | null>(null);
+}) {
+  const [selected, setSelected] = useState<Saint | null>(null);
   const [showBack, setShowBack] = useState(false);
-  const [filterRegion, setFilterRegion] = useState<"all" | "roman" | "universal">("all");
+  const [filter, setFilter] = useState<"all" | "roman" | "universal">("all");
 
-  const filteredSaints =
-    filterRegion === "all"
-      ? saints
-      : saints.filter((s) => s.region === filterRegion);
+  const visible = filter === "all" ? saints : saints.filter(s => s.region === filter);
 
   return (
-    <div className="min-h-screen bg-crem flex flex-col">
-      <header className="bg-albastru text-white px-4 py-5">
-        <h1 className="text-2xl font-bold">Sfinții mei</h1>
-        <p className="text-sm opacity-80 font-sans mt-0.5">
+    <div style={{ minHeight: "100vh", background: "#FAFAFA", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(160deg, #A77BF0, #8455D8)", padding: "52px 16px 20px" }}>
+        <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 28, fontWeight: 700, color: "white", margin: "0 0 8px" }}>
+          Sfinții mei
+        </p>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: "rgba(255,255,255,.8)", fontWeight: 600, margin: "0 0 12px" }}>
           {totalOwned} din {saints.length} sfinți descoperiți
         </p>
-
         {/* Progress bar */}
-        <div className="mt-3 h-2 bg-white bg-opacity-20 rounded-full">
-          <div
-            className="h-full bg-auriu rounded-full transition-all"
-            style={{ width: `${(totalOwned / Math.max(saints.length, 1)) * 100}%` }}
-          />
+        <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,.25)", overflow: "hidden" }}>
+          <div style={{
+            height: "100%",
+            background: "#FFC23D",
+            borderRadius: 999,
+            width: `${(totalOwned / Math.max(saints.length, 1)) * 100}%`,
+            boxShadow: "0 0 8px rgba(255,194,61,.6)",
+          }} />
         </div>
-      </header>
+      </div>
 
-      {/* Filtre */}
-      <div className="flex gap-2 px-4 py-3 bg-white border-b border-crem-inchis">
-        {(["all", "roman", "universal"] as const).map((region) => (
+      {/* Filter pills */}
+      <div style={{ display: "flex", gap: 8, padding: "12px 16px", background: "white", borderBottom: "1.5px solid #EFEBF5" }}>
+        {(["all", "roman", "universal"] as const).map(r => (
           <button
-            key={region}
-            onClick={() => setFilterRegion(region)}
-            className={`px-3 py-1.5 rounded-xl text-sm font-semibold font-sans transition-all
-              ${filterRegion === region
-                ? "bg-albastru text-white"
-                : "bg-crem text-maro hover:bg-crem-inchis"
-              }`}
+            key={r}
+            onClick={() => setFilter(r)}
+            style={{
+              fontFamily: "'Fredoka', sans-serif",
+              fontSize: 14, fontWeight: 600, padding: "7px 16px",
+              borderRadius: 999, border: "none", cursor: "pointer",
+              background: filter === r ? "#A77BF0" : "#F4F1FA",
+              color: filter === r ? "white" : "#8A8296",
+              boxShadow: filter === r ? "0 3px 0 #8455D8" : "none",
+              transition: "all .15s",
+            }}
           >
-            {region === "all" ? "Toți" : region === "roman" ? "Români" : "Universali"}
+            {r === "all" ? "Toți" : r === "roman" ? "Români" : "Universali"}
           </button>
         ))}
       </div>
 
-      {/* Grid cărți */}
-      <div className="flex-1 px-4 py-4 grid grid-cols-3 gap-3">
-        {filteredSaints.map((saint) => (
+      {/* Grid */}
+      <div style={{ flex: 1, padding: "16px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+        {visible.map(saint => (
           <button
             key={saint.id}
-            onClick={() => {
-              setSelectedSaint(saint);
-              setShowBack(false);
-            }}
+            onClick={() => saint.owned ? (setSelected(saint), setShowBack(false)) : undefined}
             disabled={!saint.owned}
-            className={`aspect-[3/4] rounded-2xl flex flex-col items-center justify-center gap-1.5 border-2 transition-all
-              ${saint.owned
-                ? "bg-white border-auriu shadow-md hover:shadow-lg active:scale-95"
-                : "bg-crem-inchis border-gray-200 opacity-50"
-              }`}
+            style={{
+              aspectRatio: "3/4",
+              borderRadius: 20,
+              border: saint.owned ? "2px solid #A77BF0" : "2px solid #EFEBF5",
+              background: saint.owned ? "white" : "#F4F1FA",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              gap: 8, padding: "12px 8px",
+              cursor: saint.owned ? "pointer" : "default",
+              opacity: saint.owned ? 1 : 0.45,
+              boxShadow: saint.owned ? "0 4px 14px -8px rgba(167,123,240,.4)" : "none",
+              transition: "all .15s",
+            }}
           >
-            <div className="text-3xl">
-              {saint.owned ? (
-                saint.iconUrl.startsWith("http") ? (
-                  <img
-                    src={saint.iconUrl}
-                    alt={saint.name}
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
-                ) : (
-                  saint.iconUrl
-                )
-              ) : (
-                <span className="opacity-30">👤</span>
-              )}
+            {/* Gold medallion */}
+            <div
+              className="medallion"
+              style={{ width: saint.owned ? 52 : 44, height: saint.owned ? 52 : 44 }}
+            >
+              <div
+                className="medallion-inner"
+                style={{ width: "100%", height: "100%", fontSize: saint.owned ? 24 : 18 }}
+              >
+                {saint.owned ? "✦" : "?"}
+              </div>
             </div>
             {saint.owned && (
-              <span className="text-xs font-bold text-maro text-center px-1 leading-tight font-sans">
+              <span style={{
+                fontFamily: "'Fredoka', sans-serif",
+                fontSize: 11, fontWeight: 700,
+                color: "#403A4A", textAlign: "center",
+                lineHeight: 1.2,
+              }}>
                 {saint.name}
               </span>
             )}
@@ -103,78 +117,86 @@ export default function SaintsCollection({ saints, totalOwned }: Props) {
         ))}
       </div>
 
-      {/* Modal detalii sfânt */}
-      {selectedSaint && (
+      {/* Modal */}
+      {selected && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 px-4"
-          onClick={() => setSelectedSaint(null)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(64,58,74,.6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 20, zIndex: 60,
+          }}
+          onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "white", borderRadius: 28,
+              maxWidth: 340, width: "100%",
+              overflow: "hidden",
+              boxShadow: "0 24px 48px -12px rgba(64,58,74,.4)",
+            }}
+            onClick={e => e.stopPropagation()}
           >
             {!showBack ? (
-              // Față
-              <div className="bg-gradient-to-b from-albastru to-albastru-deschis text-white p-6 text-center space-y-3">
-                <div className="text-6xl mx-auto">
-                  {selectedSaint.iconUrl.startsWith("http") ? (
-                    <img
-                      src={selectedSaint.iconUrl}
-                      alt={selectedSaint.name}
-                      className="w-24 h-24 rounded-2xl object-cover mx-auto border-4 border-auriu"
-                    />
-                  ) : (
-                    <span>{selectedSaint.iconUrl}</span>
-                  )}
+              /* Front */
+              <div style={{ background: "linear-gradient(160deg, #A77BF0, #8455D8)", padding: "28px 24px", textAlign: "center" }}>
+                <div className="medallion" style={{ width: 88, height: 88, margin: "0 auto 16px" }}>
+                  <div className="medallion-inner" style={{ width: "100%", height: "100%", fontSize: 40 }}>✦</div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold">{selectedSaint.name}</h2>
-                  <p className="text-sm opacity-80 font-sans">
-                    {selectedSaint.feastDay}
-                  </p>
-                  <div className="mt-2 inline-block bg-auriu bg-opacity-30 rounded-full px-3 py-0.5 text-xs font-sans">
-                    Virtutea: {selectedSaint.virtue}
-                  </div>
+                <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 22, fontWeight: 700, color: "white", margin: "0 0 4px" }}>{selected.name}</p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "rgba(255,255,255,.8)", fontWeight: 600, margin: "0 0 12px" }}>{selected.feastDay}</p>
+                <div style={{
+                  display: "inline-block", background: "rgba(255,255,255,.18)",
+                  borderRadius: 999, padding: "5px 14px",
+                  fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: "white",
+                }}>
+                  Virtutea: {selected.virtue}
                 </div>
+                <br/>
                 <button
                   onClick={() => setShowBack(true)}
-                  className="mt-2 text-sm font-sans opacity-70 hover:opacity-100 underline"
+                  style={{
+                    marginTop: 16, background: "none", border: "none", cursor: "pointer",
+                    fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700,
+                    color: "rgba(255,255,255,.75)", textDecoration: "underline",
+                  }}
                 >
                   Citește povestea →
                 </button>
               </div>
             ) : (
-              // Verso
-              <div className="p-6 space-y-4">
-                <div className="text-center">
-                  <h2 className="font-bold text-albastru text-lg">
-                    {selectedSaint.name}
-                  </h2>
-                  <p className="text-xs text-maro opacity-60 font-sans">
-                    {selectedSaint.feastDay} · {selectedSaint.region === "roman" ? "Sfânt Român" : "Sfânt Universal"}
-                  </p>
-                </div>
-                <p className="text-maro leading-relaxed text-sm">
-                  {selectedSaint.storyShort}
+              /* Back */
+              <div style={{ padding: "24px 22px" }}>
+                <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 700, color: "#403A4A", margin: "0 0 4px", textAlign: "center" }}>{selected.name}</p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: "#8A8296", fontWeight: 700, textAlign: "center", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px" }}>
+                  {selected.feastDay} · {selected.region === "roman" ? "Sfânt Român" : "Sfânt Universal"}
                 </p>
-                <div className="bg-crem rounded-xl px-4 py-2.5 text-center">
-                  <p className="text-xs text-maro font-sans">
-                    <strong>Virtutea sa:</strong> {selectedSaint.virtue}
-                  </p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 15, color: "#403A4A", fontWeight: 600, lineHeight: 1.65, margin: "0 0 16px" }}>
+                  {selected.storyShort}
+                </p>
+                <div style={{
+                  background: "#FFF4D6", borderRadius: 12, padding: "10px 14px",
+                  fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: "#EFA014",
+                }}>
+                  Virtutea sa: {selected.virtue}
                 </div>
                 <button
                   onClick={() => setShowBack(false)}
-                  className="text-sm font-sans text-albastru hover:underline"
+                  style={{ marginTop: 14, background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: "#8A8296" }}
                 >
                   ← Înapoi la icoană
                 </button>
               </div>
             )}
 
-            <div className="px-6 py-4 border-t border-crem-inchis">
+            <div style={{ padding: "12px 22px 20px", borderTop: "1.5px solid #EFEBF5" }}>
               <button
-                onClick={() => setSelectedSaint(null)}
-                className="w-full py-3 bg-crem text-maro rounded-xl font-bold font-sans hover:bg-crem-inchis"
+                onClick={() => setSelected(null)}
+                style={{
+                  width: "100%", padding: "13px",
+                  borderRadius: 999, border: "none", cursor: "pointer",
+                  background: "#F4F1FA",
+                  fontFamily: "'Fredoka', sans-serif", fontSize: 16, fontWeight: 700, color: "#8A8296",
+                }}
               >
                 Închide
               </button>

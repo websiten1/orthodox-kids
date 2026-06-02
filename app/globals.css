@@ -1,61 +1,256 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&display=swap');
 
+/* ============================================================
+   Calea Luminii — Design Tokens (Ortodoxia v2 candy + v1 reverent)
+   ============================================================ */
 :root {
-  --auriu: #C9A84C;
-  --auriu-deschis: #E8C97A;
-  --rosu: #8B1A1A;
-  --rosu-deschis: #A52828;
-  --albastru: #1B3A6B;
-  --albastru-deschis: #2A5499;
-  --crem: #F5F0E8;
-  --crem-inchis: #EAE3D5;
-  --maro: #5C3D1E;
-  --background: #F5F0E8;
-  --foreground: #2C1B0E;
+  /* Candy palette (child UI) */
+  --coral:        #FF7A5C;
+  --coral-edge:   #E85636;
+  --coral-50:     #FFEDE7;
+  --mint:         #3FD1A8;
+  --mint-edge:    #22AE88;
+  --mint-50:      #E4FAF3;
+  --sky:          #54C2F0;
+  --sky-edge:     #2FA3D8;
+  --sky-50:       #E7F6FD;
+  --sun:          #FFC23D;
+  --sun-edge:     #EFA014;
+  --sun-50:       #FFF4D6;
+  --grape:        #A77BF0;
+  --grape-edge:   #8455D8;
+  --grape-50:     #F3ECFE;
+  --tan:          #C4956A;
+  --tan-edge:     #A07040;
+  --tan-50:       #F5EDE3;
+
+  /* Reverent palette (parish UI) */
+  --red:          #A43234;
+  --red-edge:     #8A2A2C;
+  --red-50:       #FDF2F2;
+  --green:        #2E5A47;
+  --green-50:     #EBF3EF;
+  --gold:         #B58A3C;
+  --gold-50:      #FBF5E6;
+  --cream:        #FBF6EC;
+  --paper:        #F6EEDD;
+  --hairline:     #ECE3D2;
+
+  /* Neutrals */
+  --white:  #FFFFFF;
+  --ink:    #403A4A;
+  --ink-2:  #8A8296;
+  --ink-3:  #BBB4C6;
+  --line:   #EFEBF5;
+  --tint:   #F4F1FA;
+
+  /* Radii */
+  --r-sm:   14px;
+  --r-md:   20px;
+  --r-lg:   28px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-soft: 0 10px 24px -14px rgba(120,80,160,.35);
+  --shadow-lift: 0 16px 34px -16px rgba(120,80,160,.4);
+  --shadow-warm: 0 8px 24px -10px rgba(164,50,52,.25);
 }
 
 @theme inline {
-  --color-auriu: var(--auriu);
-  --color-auriu-deschis: var(--auriu-deschis);
-  --color-rosu: var(--rosu);
-  --color-rosu-deschis: var(--rosu-deschis);
-  --color-albastru: var(--albastru);
-  --color-albastru-deschis: var(--albastru-deschis);
-  --color-crem: var(--crem);
-  --color-crem-inchis: var(--crem-inchis);
-  --color-maro: var(--maro);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-coral:       var(--coral);
+  --color-coral-edge:  var(--coral-edge);
+  --color-mint:        var(--mint);
+  --color-mint-edge:   var(--mint-edge);
+  --color-sky:         var(--sky);
+  --color-sky-edge:    var(--sky-edge);
+  --color-sun:         var(--sun);
+  --color-sun-edge:    var(--sun-edge);
+  --color-grape:       var(--grape);
+  --color-tan:         var(--tan);
+  --color-red:         var(--red);
+  --color-red-edge:    var(--red-edge);
+  --color-green:       var(--green);
+  --color-gold:        var(--gold);
+  --color-cream:       var(--cream);
+  --color-paper:       var(--paper);
+  --color-ink:         var(--ink);
+  --color-ink-2:       var(--ink-2);
+  --color-line:        var(--line);
+  --color-tint:        var(--tint);
+  --color-white:       var(--white);
+  --color-hairline:    var(--hairline);
+
+  /* Legacy aliases for backward compat */
+  --color-auriu:            var(--gold);
+  --color-auriu-deschis:    #CFAb60;
+  --color-rosu:             var(--red);
+  --color-rosu-deschis:     var(--red-edge);
+  --color-albastru:         #1B3A6B;
+  --color-albastru-deschis: #2A5499;
+  --color-crem:             var(--cream);
+  --color-crem-inchis:      var(--paper);
+  --color-maro:             #5C3D1E;
+  --color-background:       var(--white);
+  --color-foreground:       var(--ink);
 }
+
+/* Base */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Georgia, 'Times New Roman', serif;
+  background: var(--white);
+  color: var(--ink);
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100%;
 }
 
-.font-sans {
-  font-family: system-ui, -apple-system, sans-serif;
+/* ---- Chunky pressable button ------------------------------------------ */
+.btn-candy {
+  font-family: 'Fredoka', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #fff;
+  border: 0;
+  border-radius: var(--r-pill);
+  padding: 15px 28px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.btn-candy:active { transform: translateY(3px); }
+
+/* Coral primary */
+.btn-coral {
+  background: var(--coral);
+  box-shadow: 0 5px 0 var(--coral-edge), 0 14px 20px -10px rgba(232,86,54,.45), inset 0 2px 0 rgba(255,255,255,.35);
+}
+.btn-coral:active { box-shadow: 0 2px 0 var(--coral-edge); }
+
+/* Mint */
+.btn-mint {
+  background: var(--mint);
+  box-shadow: 0 5px 0 var(--mint-edge), 0 14px 20px -10px rgba(34,174,136,.4), inset 0 2px 0 rgba(255,255,255,.35);
+}
+.btn-mint:active { box-shadow: 0 2px 0 var(--mint-edge); }
+
+/* Sky */
+.btn-sky {
+  background: var(--sky);
+  box-shadow: 0 5px 0 var(--sky-edge), 0 14px 20px -10px rgba(47,163,216,.4), inset 0 2px 0 rgba(255,255,255,.35);
+}
+.btn-sky:active { box-shadow: 0 2px 0 var(--sky-edge); }
+
+/* Sun */
+.btn-sun {
+  background: var(--sun);
+  box-shadow: 0 5px 0 var(--sun-edge), 0 14px 20px -10px rgba(239,160,20,.4), inset 0 2px 0 rgba(255,255,255,.35);
+}
+.btn-sun:active { box-shadow: 0 2px 0 var(--sun-edge); }
+
+/* Red (reverent / parish) */
+.btn-red {
+  background: var(--red);
+  box-shadow: 0 5px 0 var(--red-edge), 0 14px 20px -10px rgba(164,50,52,.4), inset 0 2px 0 rgba(255,255,255,.25);
+}
+.btn-red:active { box-shadow: 0 2px 0 var(--red-edge); }
+
+/* ---- Gold medallion for sacred imagery -------------------------------- */
+.medallion {
+  border-radius: 50%;
+  padding: 5px;
+  background: radial-gradient(circle at 32% 26%, #FFE7AE, var(--sun) 58%, var(--sun-edge));
+  box-shadow: 0 10px 20px -8px rgba(239,160,20,.55);
+  flex-shrink: 0;
+}
+.medallion-inner {
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #fff;
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Animație puls auriu */
-@keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(201, 168, 76, 0); }
+/* ---- Section label (dashed) ------------------------------------------- */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 2px 14px;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  border-top: 1.5px dashed var(--line);
 }
 
-.pulse-gold {
-  animation: pulse-gold 2s ease-in-out infinite;
+/* ---- Tile (explore grid) ---------------------------------------------- */
+.tile {
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 8px 14px;
+  cursor: pointer;
+  transition: transform 0.12s;
+  font-family: 'Fredoka', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.tile:active { transform: scale(0.96); }
+
+/* ---- XP bar ----------------------------------------------------------- */
+.xp-bar-track {
+  height: 8px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.xp-bar-fill {
+  height: 100%;
+  background: var(--sun);
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(255,194,61,.6);
 }
 
-/* Scroll bar stilizat */
-::-webkit-scrollbar {
-  width: 6px;
+/* ---- Gem counter ------------------------------------------------------- */
+.gem-counter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 999px;
+  padding: 6px 14px 6px 8px;
+  font-family: 'Fredoka', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
 }
-::-webkit-scrollbar-track {
-  background: var(--crem-inchis);
+
+/* ---- Scroll bar -------------------------------------------------------- */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--tint); }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+/* ---- Motion ------------------------------------------------------------ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-::-webkit-scrollbar-thumb {
-  background: var(--auriu);
-  border-radius: 3px;
-}
+.fade-up { animation: fadeUp 0.22s cubic-bezier(.2,.7,.3,1) both; }

@@ -13,8 +13,8 @@ export default async function ChildLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-crem max-w-lg mx-auto relative">
-      <div className="flex-1 pb-20">{children}</div>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#FFFFFF", maxWidth: 480, margin: "0 auto", position: "relative" }}>
+      <div style={{ flex: 1, paddingBottom: 72 }}>{children}</div>
       <ChildNav />
     </div>
   );

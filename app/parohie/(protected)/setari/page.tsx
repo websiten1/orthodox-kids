@@ -1,36 +1,40 @@
 import { getParishSession } from "@/lib/auth";
-import { DEMO_PARISH } from "@/lib/demo-data";
 
 export default async function SetariPage() {
   const session = await getParishSession();
   if (!session) return null;
-  const info = [
-    { label: "Nume parohie", value: session.name },
+  const INFO = [
+    { label: "Parohie", value: session.name },
     { label: "Email", value: session.email },
     { label: "Plan", value: "Gratuit (Demo)" },
   ];
   return (
-    <div className="p-4 lg:p-8 max-w-xl space-y-6 lg:pt-8 pt-4">
-      <h1 className="text-2xl font-bold text-gray-900">Setări parohie</h1>
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-        <h2 className="font-bold text-gray-800">Informații parohie</h2>
-        <div className="space-y-3">
-          {info.map(({ label, value }) => (
-            <div key={label} className="flex justify-between">
-              <span className="text-sm text-gray-500 font-sans">{label}</span>
-              <span className="text-sm font-semibold text-gray-800 font-sans">{value}</span>
-            </div>
-          ))}
-        </div>
+    <div style={{ padding: "24px 20px 40px", maxWidth: 480 }}>
+      <div style={{ marginBottom: 28 }}>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B58A3C", margin: "0 0 4px" }}>PAROHIE</p>
+        <h1 style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 30, fontWeight: 700, color: "#403A4A", margin: 0 }}>Setări</h1>
       </div>
-      <div className="bg-blue-50 rounded-2xl p-5 border border-blue-200">
-        <h3 className="font-bold text-albastru mb-2">📊 Plan gratuit activ</h3>
-        <ul className="space-y-1 text-sm text-gray-600 font-sans">
-          <li>✅ Până la 3 grupe</li>
-          <li>✅ Toate cele 12 teme pre-create</li>
-          <li>✅ Mini-jocuri de echipă</li>
-          <li>✅ Dashboard și rapoarte</li>
-        </ul>
+      <div style={{ background: "white", borderRadius: 20, border: "1px solid #ECE3D2", overflow: "hidden", boxShadow: "0 2px 12px -4px rgba(164,50,52,.08)", marginBottom: 16 }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #ECE3D2" }}>
+          <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 16, fontWeight: 700, color: "#403A4A", margin: 0 }}>Informații parohie</p>
+        </div>
+        {INFO.map(({ label, value }, i) => (
+          <div key={label} style={{ padding: "13px 20px", borderBottom: i < INFO.length - 1 ? "1px solid #F6EEDD" : "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "#8A8296", fontWeight: 700 }}>{label}</span>
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "#403A4A", fontWeight: 800 }}>{value}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ background: "#EBF3EF", borderRadius: 20, padding: "18px 20px", border: "1px solid #C8DDD4" }}>
+        <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 16, fontWeight: 700, color: "#2E5A47", margin: "0 0 10px" }}>Plan gratuit activ</p>
+        {["Până la 3 grupe", "Toate cele 12 teme pre-create", "Mini-jocuri de echipă", "Dashboard și rapoarte"].map(f => (
+          <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+            <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#2E5A47", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "#2E5A47", fontWeight: 700 }}>{f}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

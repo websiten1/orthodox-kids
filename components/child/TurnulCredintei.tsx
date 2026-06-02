@@ -3,227 +3,159 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-type Question = {
-  id: string;
-  text: string;
-  options: string[];
-  correctAnswer: string;
-  explanation: string;
-};
-
+type Q = { id: string; text: string; options: string[]; correctAnswer: string; explanation: string };
 type Team = { id: string; name: string };
 
-type Props = {
-  myTeam: Team;
-  opponentTeam: Team;
-  childId: string;
-  questions: Question[];
-};
-
-const TOTAL_BLOCKS = 10;
-const QUESTION_TIME = 20;
+const TOTAL = 10;
+const TIMER = 20;
 
 export default function TurnulCredinteiGame({
-  myTeam,
-  opponentTeam,
-  childId,
-  questions,
-}: Props) {
+  myTeam, opponentTeam, childId, questions,
+}: { myTeam: Team; opponentTeam: Team; childId: string; questions: Q[] }) {
   const router = useRouter();
-  const [phase, setPhase] = useState<"intro" | "playing" | "finished">("intro");
-  const [currentQ, setCurrentQ] = useState(0);
+  const [phase, setPhase] = useState<"intro" | "playing" | "done">("intro");
+  const [qIdx, setQIdx] = useState(0);
   const [myBlocks, setMyBlocks] = useState(0);
-  const [opponentBlocks, setOpponentBlocks] = useState(0);
+  const [oppBlocks, setOppBlocks] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
+  const [timer, setTimer] = useState(TIMER);
   const [result, setResult] = useState<"win" | "lose" | "draw" | null>(null);
 
-  const q = questions[currentQ];
+  const q = questions[qIdx];
 
-  // Timer
   useEffect(() => {
     if (phase !== "playing" || answered) return;
-    if (timeLeft <= 0) {
-      // Timp expirat - adversarul poate răspunde
+    if (timer <= 0) {
       setAnswered(true);
-      // Simulăm adversarul cu 40% șansă de a răspunde corect
-      if (Math.random() < 0.4) {
-        setOpponentBlocks((b) => Math.min(b + 1, TOTAL_BLOCKS));
-      }
+      if (Math.random() < 0.4) setOppBlocks(b => Math.min(b + 1, TOTAL));
       return;
     }
-    const t = setTimeout(() => setTimeLeft((l) => l - 1), 1000);
+    const t = setTimeout(() => setTimer(x => x - 1), 1000);
     return () => clearTimeout(t);
-  }, [phase, answered, timeLeft]);
+  }, [phase, answered, timer]);
 
-  function handleAnswer(option: string) {
+  function choose(opt: string) {
     if (answered) return;
-    setSelected(option);
+    setSelected(opt);
     setAnswered(true);
-
-    const isCorrect = option === q.correctAnswer;
-    if (isCorrect) {
-      setMyBlocks((b) => Math.min(b + 1, TOTAL_BLOCKS));
-    }
-
-    // Adversarul (AI) cu probabilitate de 35% răspunde corect
-    if (Math.random() < 0.35) {
-      setOpponentBlocks((b) => Math.min(b + 1, TOTAL_BLOCKS));
-    }
+    if (opt === q.correctAnswer) setMyBlocks(b => Math.min(b + 1, TOTAL));
+    if (Math.random() < 0.35) setOppBlocks(b => Math.min(b + 1, TOTAL));
   }
 
-  async function handleNext() {
-    if (currentQ < questions.length - 1) {
-      setCurrentQ((c) => c + 1);
-      setSelected(null);
-      setAnswered(false);
-      setTimeLeft(QUESTION_TIME);
+  async function next() {
+    if (qIdx < questions.length - 1) {
+      setQIdx(i => i + 1); setSelected(null); setAnswered(false); setTimer(TIMER);
     } else {
-      // Joc terminat
-      const gameResult: "win" | "lose" | "draw" =
-        myBlocks > opponentBlocks
-          ? "win"
-          : myBlocks < opponentBlocks
-          ? "lose"
-          : "draw";
-
-      setResult(gameResult);
-      setPhase("finished");
-
-      // Salvăm în DB
+      const r: "win" | "lose" | "draw" = myBlocks > oppBlocks ? "win" : myBlocks < oppBlocks ? "lose" : "draw";
+      setResult(r); setPhase("done");
       await fetch("/api/echipa/joc-rezultat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teamId: myTeam.id,
-          activityId: "turnul-credintei",
-          result: gameResult,
-        }),
+        body: JSON.stringify({ teamId: myTeam.id, activityId: "turnul-credintei", result: r }),
       });
     }
   }
 
-  if (phase === "intro") {
-    return (
-      <div className="min-h-screen bg-albastru text-white flex flex-col items-center justify-center px-4 space-y-8">
-        <div className="text-center">
-          <div className="text-7xl mb-4">🏰</div>
-          <h1 className="text-3xl font-bold">Turnul Credinței</h1>
-          <p className="text-sm opacity-80 font-sans mt-2">
-            Construiți turnul răspunzând corect!
-          </p>
-        </div>
-
-        <div className="flex items-center gap-6 w-full max-w-xs">
-          <div className="flex-1 text-center bg-white bg-opacity-10 rounded-2xl p-4">
-            <div className="text-3xl mb-1">🛡️</div>
-            <p className="font-bold">{myTeam.name}</p>
-            <p className="text-xs opacity-70 font-sans">(noi)</p>
-          </div>
-          <div className="text-2xl font-bold opacity-60">VS</div>
-          <div className="flex-1 text-center bg-white bg-opacity-10 rounded-2xl p-4">
-            <div className="text-3xl mb-1">⚔️</div>
-            <p className="font-bold">{opponentTeam.name}</p>
-            <p className="text-xs opacity-70 font-sans">(adversar)</p>
-          </div>
-        </div>
-
-        <div className="text-center text-sm opacity-70 font-sans space-y-1">
-          <p>• {questions.length} întrebări</p>
-          <p>• {QUESTION_TIME} secunde per întrebare</p>
-          <p>• Fiecare răspuns corect = 1 bloc la turn</p>
-        </div>
-
-        <button
-          onClick={() => setPhase("playing")}
-          className="w-full max-w-xs py-5 bg-auriu text-white font-bold text-xl rounded-2xl
-            hover:opacity-90 active:scale-95 transition-all shadow-lg"
-        >
-          Începe Jocul! →
-        </button>
+  if (phase === "intro") return (
+    <div style={{
+      minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center",
+      justifyContent: "center", padding: "20px 20px",
+      background: "linear-gradient(160deg, #1B3A6B 0%, #2A5499 100%)",
+      gap: 28,
+    }}>
+      <div style={{ textAlign: "center" }}>
+        <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 40, fontWeight: 700, color: "#FFC23D", margin: "0 0 8px" }}>Turnul Credinței</p>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 15, color: "rgba(255,255,255,.75)", fontWeight: 600 }}>Construiți turnul răspunzând corect!</p>
       </div>
-    );
-  }
 
-  if (phase === "finished" && result) {
-    const talantsEarned =
-      result === "win" ? 15 : result === "draw" ? 8 : 5;
+      <div style={{ display: "flex", alignItems: "center", gap: 20, width: "100%", maxWidth: 300 }}>
+        {[
+          { team: myTeam, note: "noi", color: "#FFC23D" },
+          { team: opponentTeam, note: "ei", color: "#FF7A5C" },
+        ].map(({ team, note, color }, i) => (
+          <div key={team.id} style={{ flex: 1, textAlign: "center", background: "rgba(255,255,255,.1)", borderRadius: 20, padding: "16px 12px" }}>
+            <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 18, fontWeight: 700, color: "white", margin: "0 0 4px" }}>{team.name}</p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color, fontWeight: 700, margin: 0 }}>({note})</p>
+          </div>
+        ))}
+      </div>
 
+      <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "rgba(255,255,255,.65)", fontWeight: 600, textAlign: "center", lineHeight: 1.8 }}>
+        {questions.length} întrebări · {TIMER}s per întrebare<br/>Fiecare răspuns corect = 1 bloc
+      </div>
+
+      <button onClick={() => setPhase("playing")} className="btn-candy btn-sun" style={{ fontSize: 20, padding: "16px 36px" }}>
+        Începe Jocul! →
+      </button>
+    </div>
+  );
+
+  if (phase === "done" && result) {
+    const talants = result === "win" ? 15 : result === "draw" ? 8 : 5;
     return (
-      <div className="min-h-screen bg-crem flex flex-col items-center justify-center px-4 space-y-6">
-        <div className="text-7xl">
+      <div style={{
+        minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", padding: "20px", gap: 24, background: "#FAFAFA",
+      }}>
+        <div style={{
+          width: 100, height: 100, borderRadius: "50%",
+          background: result === "win" ? "linear-gradient(145deg,#FFC23D,#EFA014)" : result === "draw" ? "linear-gradient(145deg,#54C2F0,#2FA3D8)" : "linear-gradient(145deg,#FF7A5C,#E85636)",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 52,
+          boxShadow: `0 8px 0 ${result === "win" ? "#C8820A" : result === "draw" ? "#1A8CBF" : "#C43010"}, 0 16px 24px -8px rgba(0,0,0,.2)`,
+        }}>
           {result === "win" ? "🏆" : result === "draw" ? "🤝" : "💪"}
         </div>
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-albastru">
-            {result === "win"
-              ? "Ați câștigat!"
-              : result === "draw"
-              ? "Egalitate!"
-              : "Data viitoare!"}
-          </h2>
-          <p className="text-maro font-sans mt-2">
-            Turnul vostru: {myBlocks} blocuri · Adversar: {opponentBlocks} blocuri
+
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 32, fontWeight: 700, color: "#403A4A", margin: "0 0 6px" }}>
+            {result === "win" ? "Ați câștigat!" : result === "draw" ? "Egalitate!" : "Data viitoare!"}
+          </p>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: "#8A8296", fontWeight: 600, margin: 0 }}>
+            Turnul vostru: {myBlocks} · Adversar: {oppBlocks}
           </p>
         </div>
 
-        {/* Turnuri vizuale */}
-        <div className="flex items-end justify-center gap-8">
-          <div className="text-center">
-            <div className="flex flex-col-reverse gap-1 mb-2">
-              {Array.from({ length: TOTAL_BLOCKS }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-4 w-12 rounded-sm ${
-                    i < myBlocks ? "bg-albastru" : "bg-crem-inchis"
-                  }`}
-                />
-              ))}
+        {/* Visual towers */}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 24, justifyContent: "center" }}>
+          {[
+            { label: myTeam.name, blocks: myBlocks, color: "#FFC23D" },
+            { label: opponentTeam.name, blocks: oppBlocks, color: "#FF7A5C" },
+          ].map(({ label, blocks, color }) => (
+            <div key={label} style={{ textAlign: "center" }}>
+              <div style={{ display: "flex", flexDirection: "column-reverse", gap: 3, marginBottom: 8 }}>
+                {Array.from({ length: TOTAL }).map((_, i) => (
+                  <div key={i} style={{ width: 48, height: 14, borderRadius: 4, background: i < blocks ? color : "#EFEBF5" }} />
+                ))}
+              </div>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 700, color: "#8A8296" }}>{label}</p>
             </div>
-            <p className="text-xs font-sans text-maro">{myTeam.name}</p>
-          </div>
-          <div className="text-center">
-            <div className="flex flex-col-reverse gap-1 mb-2">
-              {Array.from({ length: TOTAL_BLOCKS }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-4 w-12 rounded-sm ${
-                    i < opponentBlocks ? "bg-rosu" : "bg-crem-inchis"
-                  }`}
-                />
-              ))}
-            </div>
-            <p className="text-xs font-sans text-maro">{opponentTeam.name}</p>
-          </div>
+          ))}
         </div>
 
-        <div className="bg-auriu bg-opacity-20 rounded-2xl px-6 py-4 border border-auriu text-center">
-          <p className="text-2xl font-bold text-auriu">
-            +{talantsEarned} talanți 🪙
+        <div style={{ background: "white", borderRadius: 20, padding: "14px 28px", border: "1.5px solid #EFEBF5", textAlign: "center" }}>
+          <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 26, fontWeight: 700, color: "#FFC23D", margin: 0 }}>
+            +{talants}
+            {" "}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFC23D" style={{ display: "inline", verticalAlign: "middle" }}>
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
           </p>
         </div>
 
-        <div className="flex gap-3 w-full max-w-xs">
+        <div style={{ display: "flex", gap: 10, width: "100%", maxWidth: 300 }}>
           <button
-            onClick={() => {
-              setPhase("intro");
-              setCurrentQ(0);
-              setMyBlocks(0);
-              setOpponentBlocks(0);
-              setSelected(null);
-              setAnswered(false);
-              setTimeLeft(QUESTION_TIME);
-              setResult(null);
+            onClick={() => { setPhase("intro"); setQIdx(0); setMyBlocks(0); setOppBlocks(0); setSelected(null); setAnswered(false); setTimer(TIMER); setResult(null); }}
+            style={{
+              flex: 1, padding: "13px", borderRadius: 999,
+              border: "2px solid #54C2F0", background: "white",
+              fontFamily: "'Fredoka', sans-serif", fontSize: 15, fontWeight: 700, color: "#54C2F0",
+              cursor: "pointer",
             }}
-            className="flex-1 py-3 border-2 border-albastru text-albastru rounded-xl font-bold font-sans"
           >
-            Joacă din nou
+            Din nou
           </button>
-          <button
-            onClick={() => router.push("/copil/echipa")}
-            className="flex-1 py-3 bg-albastru text-white rounded-xl font-bold font-sans"
-          >
+          <button onClick={() => router.push("/copil/echipa")} className="btn-candy btn-sky" style={{ flex: 1 }}>
             Înapoi
           </button>
         </div>
@@ -231,130 +163,96 @@ export default function TurnulCredinteiGame({
     );
   }
 
-  // Joc în desfășurare
-  const timerPercent = (timeLeft / QUESTION_TIME) * 100;
+  /* Playing */
+  const timerPct = (timer / TIMER) * 100;
+  const isCorrect = selected === q?.correctAnswer;
 
   return (
-    <div className="min-h-screen bg-crem flex flex-col">
-      {/* Scoreboard */}
-      <div className="bg-albastru text-white px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-center">
-            <p className="text-xs opacity-70 font-sans">{myTeam.name}</p>
-            <p className="text-2xl font-bold">{myBlocks}🏰</p>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#FAFAFA" }}>
+      {/* Score header */}
+      <div style={{ background: "linear-gradient(160deg, #1B3A6B, #2A5499)", padding: "44px 16px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 10, color: "rgba(255,255,255,.65)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 2px" }}>{myTeam.name}</p>
+            <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 28, fontWeight: 700, color: "#FFC23D", margin: 0 }}>{myBlocks}</p>
           </div>
-          <div className="text-center">
-            <p className="text-xs opacity-70 font-sans">
-              {currentQ + 1}/{questions.length}
-            </p>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.6)", margin: "0 0 2px" }}>{qIdx + 1}/{questions.length}</p>
+            <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 22, fontWeight: 700, color: timer <= 5 ? "#FF7A5C" : "white", margin: 0 }}>{timer}s</p>
           </div>
-          <div className="text-center">
-            <p className="text-xs opacity-70 font-sans">{opponentTeam.name}</p>
-            <p className="text-2xl font-bold">{opponentBlocks}🏰</p>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 10, color: "rgba(255,255,255,.65)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 2px" }}>{opponentTeam.name}</p>
+            <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 28, fontWeight: 700, color: "#FF7A5C", margin: 0 }}>{oppBlocks}</p>
           </div>
         </div>
 
-        {/* Blocuri vizuale */}
-        <div className="flex gap-1">
-          <div className="flex-1 flex gap-0.5">
-            {Array.from({ length: TOTAL_BLOCKS }).map((_, i) => (
-              <div
-                key={i}
-                className={`flex-1 h-2 rounded-sm ${
-                  i < myBlocks ? "bg-auriu" : "bg-white bg-opacity-20"
-                }`}
-              />
-            ))}
-          </div>
-          <div className="w-2" />
-          <div className="flex-1 flex gap-0.5">
-            {Array.from({ length: TOTAL_BLOCKS }).map((_, i) => (
-              <div
-                key={i}
-                className={`flex-1 h-2 rounded-sm ${
-                  i < opponentBlocks ? "bg-rosu" : "bg-white bg-opacity-20"
-                }`}
-              />
-            ))}
-          </div>
+        {/* Blocks progress */}
+        <div style={{ display: "flex", gap: 3 }}>
+          {Array.from({ length: TOTAL }).map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 8, borderRadius: 4, background: i < myBlocks ? "#FFC23D" : i < oppBlocks ? "#FF7A5C" : "rgba(255,255,255,.2)" }} />
+          ))}
         </div>
       </div>
 
-      {/* Timer */}
-      <div className="h-1.5 bg-crem-inchis">
-        <div
-          className={`h-full transition-all ${
-            timeLeft <= 5 ? "bg-red-500" : "bg-auriu"
-          }`}
-          style={{ width: `${timerPercent}%` }}
-        />
-      </div>
-      <div className="text-center py-1">
-        <span
-          className={`text-sm font-bold font-sans ${
-            timeLeft <= 5 ? "text-red-500" : "text-maro opacity-60"
-          }`}
-        >
-          {timeLeft}s
-        </span>
+      {/* Timer bar */}
+      <div style={{ height: 4, background: "#F4F1FA" }}>
+        <div style={{ height: "100%", background: timer <= 5 ? "#FF7A5C" : "#FFC23D", width: `${timerPct}%`, transition: "width 1s linear" }} />
       </div>
 
-      {/* Întrebarea */}
-      <div className="flex-1 px-4 py-4 space-y-4">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-crem-inchis">
-          <p className="text-lg font-bold text-foreground leading-relaxed">
+      <div style={{ flex: 1, padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+        {/* Question */}
+        <div style={{ background: "white", borderRadius: 24, padding: 22, border: "1.5px solid #EFEBF5", boxShadow: "0 8px 24px -12px rgba(120,80,160,.2)" }}>
+          <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 700, color: "#403A4A", lineHeight: 1.3, margin: 0 }}>
             {q?.text}
           </p>
         </div>
 
-        <div className="space-y-3">
-          {q?.options?.map((option) => {
-            const isSelected = selected === option;
-            const isCorrect = option === q.correctAnswer;
-
-            let style = "border-2 border-crem-inchis bg-white";
+        {/* Options */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {q?.options?.map(opt => {
+            const isSel = opt === selected;
+            const isCorr = opt === q.correctAnswer;
+            let bg = "white", border = "#EFEBF5", color = "#403A4A";
             if (answered) {
-              if (isCorrect) style = "border-2 border-green-400 bg-green-50";
-              else if (isSelected) style = "border-2 border-red-300 bg-red-50";
-              else style = "border-2 border-crem-inchis bg-white opacity-50";
-            } else if (isSelected) {
-              style = "border-2 border-auriu bg-auriu bg-opacity-10";
-            }
+              if (isCorr) { bg = "#E4FAF3"; border = "#3FD1A8"; }
+              else if (isSel) { bg = "#FFEDE7"; border = "#FF7A5C"; }
+              else { color = "#BBB4C6"; }
+            } else if (isSel) { bg = "#E7F6FD"; border = "#54C2F0"; }
 
             return (
               <button
-                key={option}
-                onClick={() => handleAnswer(option)}
+                key={opt}
+                onClick={() => choose(opt)}
                 disabled={answered}
-                className={`w-full text-left px-4 py-3.5 rounded-xl font-sans text-base transition-all ${style}
-                  ${!answered ? "hover:border-auriu active:scale-98" : "cursor-default"}`}
+                style={{
+                  padding: "14px 18px", borderRadius: 16,
+                  border: `2px solid ${border}`, background: bg,
+                  fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, color,
+                  textAlign: "left", cursor: answered ? "default" : "pointer",
+                  transition: "all .15s",
+                }}
               >
-                <span className="text-maro">{option}</span>
+                {opt}
               </button>
             );
           })}
         </div>
 
         {answered && (
-          <div
-            className={`rounded-xl p-3 ${
-              selected === q.correctAnswer
-                ? "bg-green-50 border border-green-200"
-                : "bg-amber-50 border border-amber-200"
-            }`}
-          >
-            <p className="text-sm font-sans text-maro">{q.explanation}</p>
-          </div>
-        )}
-
-        {answered && (
-          <button
-            onClick={handleNext}
-            className="w-full py-4 rounded-xl bg-albastru text-white font-bold font-sans
-              hover:bg-albastru-deschis active:scale-95 transition-all"
-          >
-            {currentQ < questions.length - 1 ? "Următoarea →" : "Termină jocul!"}
-          </button>
+          <>
+            <div style={{
+              background: isCorrect ? "#E4FAF3" : "#FFF4D6",
+              border: `1.5px solid ${isCorrect ? "#3FD1A8" : "#FFC23D"}`,
+              borderRadius: 16, padding: "12px 16px",
+            }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: "#403A4A", fontWeight: 600, margin: 0 }}>
+                {q?.explanation}
+              </p>
+            </div>
+            <button onClick={next} className="btn-candy btn-sky">
+              {qIdx < questions.length - 1 ? "Următoarea →" : "Termină jocul!"}
+            </button>
+          </>
         )}
       </div>
     </div>

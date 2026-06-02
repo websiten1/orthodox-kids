@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const AVATAR_TYPES = ["👦", "👧", "🧒", "👶", "🙍‍♂️", "🙍‍♀️"];
 const AVATAR_COLORS = [
-  { name: "Albastru", value: "albastru", bg: "#1B3A6B" },
-  { name: "Roșu", value: "rosu", bg: "#8B1A1A" },
-  { name: "Auriu", value: "auriu", bg: "#C9A84C" },
-  { name: "Verde", value: "verde", bg: "#2D5A1B" },
-  { name: "Mov", value: "mov", bg: "#4A0E8F" },
+  { value: "sky",   bg: "#54C2F0", edge: "#2FA3D8" },
+  { value: "coral", bg: "#FF7A5C", edge: "#E85636" },
+  { value: "mint",  bg: "#3FD1A8", edge: "#22AE88" },
+  { value: "sun",   bg: "#FFC23D", edge: "#EFA014" },
+  { value: "grape", bg: "#A77BF0", edge: "#8455D8" },
 ];
+
+const AVATAR_EMOJIS = ["🧒", "👦", "👧", "👶", "🙍‍♂️", "🙍‍♀️"];
 
 export default function ProfilNouPage() {
   const router = useRouter();
@@ -18,31 +19,27 @@ export default function ProfilNouPage() {
   const [groupName, setGroupName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [initial, setInitial] = useState("");
-  const [avatarType, setAvatarType] = useState(0);
-  const [avatarColor, setAvatarColor] = useState("albastru");
+  const [avatarIdx, setAvatarIdx] = useState(0);
+  const [colorIdx, setColorIdx] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const code = sessionStorage.getItem("groupCode");
-    const name = sessionStorage.getItem("groupName");
-    if (!code) {
-      router.push("/copil");
-      return;
-    }
+    if (!code) { router.push("/copil"); return; }
     setGroupCode(code);
-    setGroupName(name ?? "");
+    setGroupName(sessionStorage.getItem("groupName") ?? "");
   }, [router]);
+
+  const color = AVATAR_COLORS[colorIdx];
+  const displayName = firstName.trim()
+    ? `${firstName.trim()}${initial.trim() ? " " + initial.trim().toUpperCase() + "." : ""}`
+    : "Numele tău";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    if (!firstName.trim()) {
-      setError("Introdu prenumele tău.");
-      return;
-    }
-
+    if (!firstName.trim()) { setError("Introdu prenumele tău."); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/copil/inregistrare", {
@@ -52,129 +49,181 @@ export default function ProfilNouPage() {
           groupCode,
           firstName: firstName.trim(),
           initial: initial.trim().toUpperCase(),
-          avatarConfig: { avatarType, clothingColor: avatarColor },
+          avatarConfig: { avatarIdx, colorIdx, color: color.value },
         }),
       });
-
       let data: { error?: string; accessToken?: string } = {};
       try { data = await res.json(); } catch { /* ignore */ }
-
-      if (!res.ok) {
-        setError(data.error ?? `Eroare server (${res.status}). Încercați din nou.`);
-        return;
-      }
-
+      if (!res.ok) { setError(data.error ?? `Eroare (${res.status}).`); return; }
       sessionStorage.setItem("newChildToken", data.accessToken ?? "");
       router.push("/copil/profil-nou/token");
-    } catch {
-      setError("Eroare de rețea. Verificați conexiunea.");
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Eroare de rețea."); }
+    finally { setLoading(false); }
   }
 
-  const displayName = firstName.trim()
-    ? `${firstName.trim()}${initial.trim() ? " " + initial.trim().toUpperCase() + "." : ""}`
-    : "Numele tău";
-
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-crem">
-      <div className="w-full max-w-sm">
+    <main
+      className="min-h-screen flex flex-col items-center justify-center px-5 py-8"
+      style={{ background: "linear-gradient(160deg, #E7F6FD 0%, #FFF9EE 100%)" }}
+    >
+      <div className="w-full max-w-xs">
+
+        {/* Avatar preview */}
         <div className="text-center mb-6">
-          <div className="text-5xl">{AVATAR_TYPES[avatarType]}</div>
-          <h2 className="text-2xl font-bold text-albastru mt-2">{displayName}</h2>
-          <p className="text-maro text-sm mt-1">
-            {groupName ? `Clasa: ${groupName}` : "Creează-ți profilul"}
+          <div
+            className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center text-5xl mb-3 transition-all"
+            style={{
+              background: `linear-gradient(145deg, ${color.bg}, ${color.edge})`,
+              boxShadow: `0 6px 0 ${color.edge}, 0 14px 20px -8px ${color.bg}88`,
+            }}
+          >
+            {AVATAR_EMOJIS[avatarIdx]}
+          </div>
+          <p style={{ fontFamily: "'Fredoka', system-ui", fontSize: 22, fontWeight: 700, color: "#403A4A" }}>
+            {displayName}
           </p>
+          {groupName && (
+            <p style={{ fontFamily: "'Nunito', system-ui", fontSize: 13, color: "#8A8296", fontWeight: 600 }}>
+              {groupName}
+            </p>
+          )}
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-md border border-crem-inchis space-y-5">
-          <div>
-            <label className="block text-sm font-bold text-maro mb-2 font-sans">
-              Prenumele tău
-            </label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-              maxLength={30}
-              className="w-full px-4 py-3 rounded-xl border-2 border-crem-inchis focus:border-auriu focus:outline-none font-sans text-lg text-center"
-              placeholder="Ex: Andrei"
-              autoFocus
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div style={{ background: "white", borderRadius: 24, padding: 20, boxShadow: "0 8px 24px -10px rgba(120,80,160,.18)" }}>
 
-          <div>
-            <label className="block text-sm font-bold text-maro mb-2 font-sans">
-              Prima literă a numelui de familie
-            </label>
-            <input
-              type="text"
-              value={initial}
-              onChange={(e) => setInitial(e.target.value.slice(0, 1))}
-              maxLength={1}
-              className="w-full px-4 py-3 rounded-xl border-2 border-crem-inchis focus:border-auriu focus:outline-none font-sans text-lg text-center uppercase"
-              placeholder="M."
-            />
-            <p className="text-xs text-maro opacity-60 mt-1 font-sans text-center">
-              Opțional — pentru a te deosebi de colegii cu același prenume
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-maro mb-3 font-sans">
-              Alege avatarul tău
-            </label>
-            <div className="grid grid-cols-6 gap-2">
-              {AVATAR_TYPES.map((emoji, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setAvatarType(i)}
-                  className={`h-12 w-full rounded-xl text-2xl flex items-center justify-center transition-all
-                    ${avatarType === i
-                      ? "bg-auriu shadow-md scale-110 ring-2 ring-auriu"
-                      : "bg-crem hover:bg-crem-inchis"
-                    }`}
-                >
-                  {emoji}
-                </button>
-              ))}
+            {/* Name input */}
+            <div className="mb-4">
+              <p style={{ fontFamily: "'Nunito', system-ui", fontSize: 13, fontWeight: 700, color: "#8A8296", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+                Prenumele tău
+              </p>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                maxLength={30}
+                autoFocus
+                className="w-full text-center focus:outline-none"
+                style={{
+                  fontFamily: "'Fredoka', system-ui",
+                  fontSize: 24,
+                  fontWeight: 600,
+                  color: "#403A4A",
+                  border: "2.5px solid #EFEBF5",
+                  borderRadius: 14,
+                  padding: "12px 16px",
+                  background: "#F4F1FA",
+                  width: "100%",
+                }}
+                placeholder="ex: Andrei"
+              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-bold text-maro mb-3 font-sans">
-              Culoarea ta preferată
-            </label>
-            <div className="flex gap-3 justify-center">
-              {AVATAR_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => setAvatarColor(color.value)}
-                  title={color.name}
-                  className={`h-10 w-10 rounded-full transition-all
-                    ${avatarColor === color.value ? "scale-125 ring-2 ring-offset-2 ring-maro" : ""}`}
-                  style={{ backgroundColor: color.bg }}
+            {/* Initial */}
+            <div className="mb-5">
+              <p style={{ fontFamily: "'Nunito', system-ui", fontSize: 13, fontWeight: 700, color: "#8A8296", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+                Prima literă a numelui de familie
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text"
+                  value={initial}
+                  onChange={(e) => setInitial(e.target.value.slice(0, 1))}
+                  maxLength={1}
+                  className="text-center focus:outline-none uppercase"
+                  style={{
+                    fontFamily: "'Fredoka', system-ui",
+                    fontSize: 24,
+                    fontWeight: 600,
+                    color: "#403A4A",
+                    border: "2.5px solid #EFEBF5",
+                    borderRadius: 14,
+                    padding: "12px",
+                    background: "#F4F1FA",
+                    width: 64,
+                    flexShrink: 0,
+                  }}
+                  placeholder="M"
                 />
-              ))}
+                <p style={{ fontFamily: "'Nunito', system-ui", fontSize: 12, color: "#BBB4C6", fontWeight: 600, alignSelf: "center" }}>
+                  Opțional — pentru a te deosebi de colegii cu același prenume
+                </p>
+              </div>
             </div>
+
+            {/* Avatar selector */}
+            <div className="mb-4">
+              <p style={{ fontFamily: "'Nunito', system-ui", fontSize: 13, fontWeight: 700, color: "#8A8296", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+                Alege avatarul
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
+                {AVATAR_EMOJIS.map((emoji, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setAvatarIdx(i)}
+                    style={{
+                      aspectRatio: "1",
+                      borderRadius: 12,
+                      background: avatarIdx === i ? color.bg : "#F4F1FA",
+                      border: avatarIdx === i ? `2px solid ${color.edge}` : "2px solid transparent",
+                      fontSize: 22,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all .15s",
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color selector */}
+            <div>
+              <p style={{ fontFamily: "'Nunito', system-ui", fontSize: 13, fontWeight: 700, color: "#8A8296", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+                Culoarea preferată
+              </p>
+              <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+                {AVATAR_COLORS.map((c, i) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setColorIdx(i)}
+                    style={{
+                      width: 36, height: 36,
+                      borderRadius: "50%",
+                      background: c.bg,
+                      border: colorIdx === i ? `3px solid #403A4A` : "3px solid transparent",
+                      boxShadow: colorIdx === i ? `0 0 0 2px white, 0 0 0 4px ${c.bg}` : "none",
+                      cursor: "pointer",
+                      transition: "all .15s",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm font-sans text-center">
+            <p style={{ fontFamily: "'Nunito', system-ui", color: "#E85636", fontWeight: 700, textAlign: "center", fontSize: 14 }}>
               {error}
-            </div>
+            </p>
           )}
 
           <button
             type="submit"
             disabled={loading || !firstName.trim()}
-            className="w-full py-4 rounded-xl bg-rosu text-white font-bold text-lg font-sans
-              hover:bg-rosu-deschis transition-all active:scale-95 shadow-md
-              disabled:opacity-60 disabled:cursor-not-allowed"
+            className="btn-candy w-full text-lg"
+            style={{
+              background: color.bg,
+              boxShadow: `0 5px 0 ${color.edge}, 0 14px 20px -10px ${color.bg}88, inset 0 2px 0 rgba(255,255,255,.35)`,
+              opacity: (loading || !firstName.trim()) ? 0.6 : 1,
+            }}
           >
             {loading ? "Se creează profilul..." : "Gata! Intru în joc →"}
           </button>

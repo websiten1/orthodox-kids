@@ -15,46 +15,39 @@ type ShopItem = {
   equipped: boolean;
 };
 
-type Props = {
+const CATS: { key: string; label: string; color: string }[] = [
+  { key: "avatar_clothing", label: "Veșminte", color: "#54C2F0" },
+  { key: "avatar_accessory", label: "Accesorii", color: "#FF7A5C" },
+  { key: "room_item", label: "Cameră", color: "#C4956A" },
+  { key: "card_frame", label: "Rame", color: "#FFC23D" },
+  { key: "title", label: "Titluri", color: "#A77BF0" },
+];
+
+export default function ShopView({
+  talantsBalance,
+  childId,
+  items,
+}: {
   talantsBalance: number;
   childId: string;
   items: ShopItem[];
-};
-
-const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
-  avatar_clothing: { label: "Veșminte", emoji: "👘" },
-  avatar_accessory: { label: "Accesorii", emoji: "🕯️" },
-  room_item: { label: "Camera mea", emoji: "🏠" },
-  card_frame: { label: "Rame sfinți", emoji: "🖼️" },
-  title: { label: "Titluri", emoji: "⭐" },
-};
-
-export default function ShopView({ talantsBalance, childId, items }: Props) {
-  const [activeTab, setActiveTab] = useState<string>("avatar_clothing");
+}) {
+  const [activeTab, setActiveTab] = useState("avatar_clothing");
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [localBalance, setLocalBalance] = useState(talantsBalance);
-  const [localOwned, setLocalOwned] = useState<Set<string>>(
-    new Set(items.filter((i) => i.owned).map((i) => i.id))
-  );
-  const [localEquipped, setLocalEquipped] = useState<Set<string>>(
-    new Set(items.filter((i) => i.equipped).map((i) => i.id))
-  );
-  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [ownedIds, setOwnedIds] = useState<Set<string>>(new Set(items.filter(i => i.owned).map(i => i.id)));
+  const [equippedIds, setEquippedIds] = useState<Set<string>>(new Set(items.filter(i => i.equipped).map(i => i.id)));
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
-  const categories = Object.keys(CATEGORY_LABELS);
-  const filteredItems = items.filter((i) => i.category === activeTab);
+  const filtered = items.filter(i => i.category === activeTab);
 
   async function handleBuy(item: ShopItem) {
-    if (localOwned.has(item.id)) {
-      handleEquip(item);
-      return;
-    }
+    if (ownedIds.has(item.id)) { handleEquip(item); return; }
     if (localBalance < item.talantsCost) {
-      setMessage({ text: "Nu ai suficienți talanți!", ok: false });
-      setTimeout(() => setMessage(null), 2500);
+      setToast({ msg: "Nu ai suficienți talanți!", ok: false });
+      setTimeout(() => setToast(null), 2500);
       return;
     }
-
     setPurchasing(item.id);
     const res = await fetch("/api/copil/magazin/cumpara", {
       method: "POST",
@@ -62,154 +55,164 @@ export default function ShopView({ talantsBalance, childId, items }: Props) {
       body: JSON.stringify({ childId, shopItemId: item.id }),
     });
     setPurchasing(null);
-
     if (res.ok) {
-      setLocalBalance((b) => b - item.talantsCost);
-      setLocalOwned((s) => new Set([...s, item.id]));
-      setMessage({ text: `"${item.name}" a fost cumpărat!`, ok: true });
-    } else {
-      setMessage({ text: "Eroare la cumpărare.", ok: false });
-    }
-    setTimeout(() => setMessage(null), 2500);
+      setLocalBalance(b => b - item.talantsCost);
+      setOwnedIds(s => new Set([...s, item.id]));
+      setToast({ msg: `"${item.name}" cumpărat!`, ok: true });
+    } else { setToast({ msg: "Eroare la cumpărare.", ok: false }); }
+    setTimeout(() => setToast(null), 2500);
   }
 
   async function handleEquip(item: ShopItem) {
-    if (!localOwned.has(item.id)) return;
-    const isEquipped = localEquipped.has(item.id);
-
+    if (!ownedIds.has(item.id)) return;
+    const eq = !equippedIds.has(item.id);
     await fetch("/api/copil/magazin/echipeaza", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        childId,
-        shopItemId: item.id,
-        equip: !isEquipped,
-      }),
+      body: JSON.stringify({ childId, shopItemId: item.id, equip: eq }),
     });
-
-    setLocalEquipped((s) => {
-      const updated = new Set(s);
-      if (isEquipped) updated.delete(item.id);
-      else updated.add(item.id);
-      return updated;
+    setEquippedIds(s => {
+      const n = new Set(s);
+      eq ? n.add(item.id) : n.delete(item.id);
+      return n;
     });
   }
 
   return (
-    <div className="min-h-screen bg-crem flex flex-col">
-      <header className="bg-rosu text-white px-4 py-4">
-        <h1 className="text-2xl font-bold">Magazinul</h1>
-        <p className="text-sm opacity-80 font-sans flex items-center gap-1.5 mt-0.5">
-          <span>🪙</span>
-          <span className="font-bold">{localBalance}</span> talanți disponibili
-        </p>
-      </header>
+    <div style={{ minHeight: "100vh", background: "#FAFAFA", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(160deg, #FF7A5C, #E85636)", padding: "52px 16px 20px" }}>
+        <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 28, fontWeight: 700, color: "white", margin: "0 0 4px" }}>Magazin</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFC23D">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 700, color: "white" }}>{localBalance}</span>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "rgba(255,255,255,.8)", fontWeight: 600 }}>talanți disponibili</span>
+        </div>
+      </div>
 
-      {/* Tab-uri categorii */}
-      <div className="flex overflow-x-auto gap-2 px-4 py-3 bg-white border-b border-crem-inchis">
-        {categories.map((cat) => {
-          const { label, emoji } = CATEGORY_LABELS[cat];
-          return (
-            <button
-              key={cat}
-              onClick={() => setActiveTab(cat)}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold font-sans transition-all
-                ${activeTab === cat
-                  ? "bg-rosu text-white"
-                  : "bg-crem text-maro hover:bg-crem-inchis"
-                }`}
-            >
-              <span>{emoji}</span>
-              {label}
-            </button>
-          );
-        })}
+      {/* Tab strip */}
+      <div style={{ display: "flex", gap: 8, padding: "12px 16px", overflowX: "auto", background: "white", borderBottom: "1.5px solid #EFEBF5" }}>
+        {CATS.map(cat => (
+          <button
+            key={cat.key}
+            onClick={() => setActiveTab(cat.key)}
+            style={{
+              fontFamily: "'Fredoka', sans-serif",
+              fontSize: 14, fontWeight: 600,
+              padding: "8px 16px", borderRadius: 999, border: "none",
+              cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+              background: activeTab === cat.key ? cat.color : "#F4F1FA",
+              color: activeTab === cat.key ? "white" : "#8A8296",
+              boxShadow: activeTab === cat.key ? `0 3px 0 ${cat.color}88` : "none",
+              transition: "all .15s",
+            }}
+          >
+            {cat.label}
+          </button>
+        ))}
       </div>
 
       {/* Toast */}
-      {message && (
-        <div
-          className={`mx-4 mt-3 px-4 py-3 rounded-xl text-sm font-sans text-center font-semibold
-            ${message.ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-        >
-          {message.text}
+      {toast && (
+        <div style={{
+          margin: "12px 16px 0",
+          padding: "12px 16px",
+          borderRadius: 14,
+          background: toast.ok ? "#E4FAF3" : "#FFEDE7",
+          border: `1.5px solid ${toast.ok ? "#3FD1A8" : "#FF7A5C"}`,
+          fontFamily: "'Nunito', sans-serif",
+          fontSize: 14, fontWeight: 700,
+          color: toast.ok ? "#22AE88" : "#E85636",
+          textAlign: "center",
+        }}>
+          {toast.msg}
         </div>
       )}
 
-      {/* Produsele */}
-      <div className="flex-1 px-4 py-4 grid grid-cols-2 gap-3">
-        {filteredItems.length === 0 ? (
-          <div className="col-span-2 text-center py-12">
-            <div className="text-4xl mb-3">🛍️</div>
-            <p className="text-maro opacity-60 font-sans text-sm">
-              Niciun item în această categorie.
-            </p>
+      {/* Grid */}
+      <div style={{ flex: 1, padding: "16px", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, alignContent: "start" }}>
+        {filtered.length === 0 ? (
+          <div style={{ gridColumn: "span 2", textAlign: "center", padding: "40px 20px" }}>
+            <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 18, color: "#BBB4C6" }}>Niciun produs în această categorie.</p>
           </div>
-        ) : (
-          filteredItems.map((item) => {
-            const owned = localOwned.has(item.id);
-            const equipped = localEquipped.has(item.id);
-            const canAfford = localBalance >= item.talantsCost;
+        ) : filtered.map(item => {
+          const owned = ownedIds.has(item.id);
+          const equipped = equippedIds.has(item.id);
+          const canAfford = localBalance >= item.talantsCost;
+          const catColor = CATS.find(c => c.key === item.category)?.color ?? "#54C2F0";
 
-            return (
-              <div
-                key={item.id}
-                className={`bg-white rounded-2xl p-3 shadow-sm border flex flex-col gap-2 transition-all
-                  ${equipped ? "border-auriu ring-2 ring-auriu ring-opacity-30" : "border-crem-inchis"}`}
-              >
-                {/* Imaginea produsului */}
-                <div className="aspect-square bg-crem rounded-xl flex items-center justify-center text-5xl">
-                  {item.imageUrl.startsWith("http") ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-full object-cover rounded-xl"
-                    />
-                  ) : (
-                    <span>{item.imageUrl}</span>
-                  )}
-                </div>
+          return (
+            <div
+              key={item.id}
+              style={{
+                background: "white", borderRadius: 20, overflow: "hidden",
+                border: equipped ? `2px solid ${catColor}` : "1.5px solid #EFEBF5",
+                boxShadow: equipped ? `0 0 0 3px ${catColor}22` : "0 4px 14px -8px rgba(120,80,160,.15)",
+              }}
+            >
+              {/* Image area */}
+              <div style={{
+                background: `linear-gradient(145deg, ${catColor}22, ${catColor}11)`,
+                height: 90,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 42,
+              }}>
+                {item.imageUrl}
+              </div>
 
-                <div>
-                  <p className="font-bold text-maro text-sm leading-tight">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-maro opacity-60 font-sans">
-                    {item.description}
-                  </p>
-                </div>
+              {/* Info */}
+              <div style={{ padding: "10px 12px 12px" }}>
+                <p style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 15, fontWeight: 700, color: "#403A4A", margin: "0 0 2px", lineHeight: 1.1 }}>
+                  {item.name}
+                </p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: "#8A8296", fontWeight: 600, margin: "0 0 10px" }}>
+                  {item.description}
+                </p>
 
                 {item.isEarnable && !owned ? (
-                  <div className="text-xs text-center text-auriu font-sans bg-auriu bg-opacity-10 rounded-lg px-2 py-1.5">
+                  <div style={{
+                    padding: "6px 10px", borderRadius: 10,
+                    background: "#FFF4D6", border: "1.5px solid #FFC23D",
+                    fontFamily: "'Nunito', sans-serif", fontSize: 10, fontWeight: 700, color: "#EFA014",
+                    textAlign: "center",
+                  }}>
                     {item.requiredCondition ?? "Se câștigă"}
                   </div>
                 ) : (
                   <button
                     onClick={() => handleBuy(item)}
                     disabled={purchasing === item.id || (!owned && !canAfford)}
-                    className={`w-full py-2 rounded-xl text-sm font-bold font-sans transition-all
-                      ${equipped
-                        ? "bg-auriu text-white"
-                        : owned
-                        ? "border-2 border-auriu text-auriu"
-                        : canAfford
-                        ? "bg-rosu text-white hover:bg-rosu-deschis active:scale-95"
-                        : "bg-crem-inchis text-maro opacity-50 cursor-not-allowed"
-                      }`}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: 999,
+                      border: owned && !equipped ? `2px solid ${catColor}` : "2px solid transparent",
+                      cursor: "pointer",
+                      fontFamily: "'Fredoka', sans-serif", fontSize: 14, fontWeight: 700,
+                      background: equipped ? catColor : owned ? "white" : canAfford ? catColor : "#F4F1FA",
+                      color: equipped ? "white" : owned ? catColor : canAfford ? "white" : "#BBB4C6",
+                      boxShadow: (equipped || (canAfford && !owned)) ? `0 3px 0 ${catColor}88` : "none",
+                      transition: "all .15s",
+                      opacity: (!owned && !canAfford) ? 0.5 : 1,
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                    }}
                   >
-                    {purchasing === item.id
-                      ? "..."
-                      : equipped
-                      ? "✓ Echipat"
-                      : owned
-                      ? "Echipează"
-                      : `🪙 ${item.talantsCost}`}
+                    {purchasing === item.id ? "..." : equipped ? "Echipat" : owned ? "Echipează" : (
+                      <>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill={canAfford ? "#FFC23D" : "#BBB4C6"}>
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        {item.talantsCost}
+                      </>
+                    )}
                   </button>
                 )}
               </div>
-            );
-          })
-        )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

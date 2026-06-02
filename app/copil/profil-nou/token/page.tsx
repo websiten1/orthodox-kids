@@ -10,17 +10,14 @@ export default function TokenPage() {
 
   useEffect(() => {
     const t = sessionStorage.getItem("newChildToken");
-    if (!t) {
-      router.push("/copil");
-      return;
-    }
+    if (!t) { router.push("/copil"); return; }
     setToken(t);
   }, [router]);
 
   function handleCopy() {
     navigator.clipboard.writeText(token).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2500);
     });
   }
 
@@ -31,48 +28,80 @@ export default function TokenPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-crem">
-      <div className="w-full max-w-sm text-center space-y-6">
+    <main
+      className="min-h-screen flex flex-col items-center justify-center px-5 py-10"
+      style={{ background: "linear-gradient(160deg, #E7F6FD 0%, #FFF9EE 100%)" }}
+    >
+      <div className="w-full max-w-xs text-center" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+
+        {/* Icon */}
+        <div style={{
+          width: 80, height: 80, borderRadius: 26,
+          background: "linear-gradient(145deg, #FFC23D, #EFA014)",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40,
+          boxShadow: "0 8px 0 #C8820A, 0 16px 24px -8px rgba(239,160,20,.5)",
+        }}>
+          🔑
+        </div>
+
         <div>
-          <div className="text-6xl mb-3">🔑</div>
-          <h1 className="text-2xl font-bold text-albastru">
+          <h1 style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 28, fontWeight: 700, color: "#403A4A", margin: "0 0 10px" }}>
             Codul tău personal
           </h1>
-          <p className="text-maro text-sm mt-2 leading-relaxed font-sans">
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: "#8A8296", fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
             Acesta este codul tău secret. Scrie-l sau fotografiază-l!
-            Vei avea nevoie de el data viitoare când vrei să intri.
+            Vei avea nevoie de el data viitoare.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-auriu">
-          <div className="text-3xl font-bold tracking-widest text-albastru font-sans mb-3">
+        {/* Token display */}
+        <div style={{
+          background: "white", borderRadius: 24, padding: "22px 28px",
+          border: "2px solid #FFC23D",
+          boxShadow: "0 8px 24px -10px rgba(239,160,20,.35)",
+          width: "100%",
+        }}>
+          <p style={{
+            fontFamily: "'Fredoka', sans-serif",
+            fontSize: 34, fontWeight: 700,
+            letterSpacing: "0.22em", color: "#403A4A",
+            margin: "0 0 14px",
+          }}>
             {token.slice(0, 8).toUpperCase()}
-          </div>
+          </p>
           <button
             onClick={handleCopy}
-            className={`text-sm font-sans px-4 py-2 rounded-lg transition-all ${
-              copied
-                ? "bg-green-100 text-green-700"
-                : "bg-crem text-maro hover:bg-crem-inchis"
-            }`}
+            style={{
+              fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700,
+              padding: "8px 20px", borderRadius: 999,
+              border: "none", cursor: "pointer",
+              background: copied ? "#E4FAF3" : "#F4F1FA",
+              color: copied ? "#22AE88" : "#8A8296",
+              transition: "all .2s",
+              boxShadow: copied ? "0 3px 0 #22AE88" : "none",
+            }}
           >
-            {copied ? "✓ Copiat!" : "📋 Copiază codul"}
+            {copied ? "Copiat!" : "Copiază codul"}
           </button>
         </div>
 
-        <div className="bg-auriu bg-opacity-10 rounded-xl p-4 border border-auriu border-opacity-30">
-          <p className="text-sm text-maro font-sans">
-            <strong>Important:</strong> Spune și unui părinte codul tău sau
-            fotografiați-l împreună. Fără acest cod nu vei putea intra data viitoare.
+        {/* Warning */}
+        <div style={{
+          background: "white", borderRadius: 18, padding: "14px 18px",
+          border: "1.5px solid #EFEBF5",
+          width: "100%",
+        }}>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "#8A8296", fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
+            <strong style={{ color: "#403A4A" }}>Important:</strong> Spune și unui părinte codul tău. Fără el nu vei putea intra data viitoare.
           </p>
         </div>
 
         <button
           onClick={handleContinue}
-          className="w-full py-4 rounded-2xl bg-albastru text-white font-bold text-lg
-            hover:bg-albastru-deschis transition-all active:scale-95 shadow-lg"
+          className="btn-candy btn-sky"
+          style={{ width: "100%", fontSize: 18 }}
         >
-          Am salvat codul → Mergem!
+          Am salvat codul — Mergem!
         </button>
       </div>
     </main>
